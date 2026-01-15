@@ -355,6 +355,11 @@ function extractCategory(publicId) {
   return 'sin-categoria';
 }
 
+// Admin route (without .html)
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
 // Fallback to index.html for SPA
 app.get('*', (req, res) => {
   // Don't redirect API calls
