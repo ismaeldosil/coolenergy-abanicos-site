@@ -433,16 +433,6 @@ img {
   cursor: pointer;
 }
 
-.category-card .category-tag::after {
-  content: ' · Ver todos';
-  color: var(--neon-cyan);
-  opacity: 0;
-  transition: var(--transition-base);
-}
-
-.category-card:hover .category-tag::after {
-  opacity: 1;
-}
 
 .category-card::before {
   content: '';
