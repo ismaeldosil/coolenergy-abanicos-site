@@ -490,9 +490,13 @@
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
-          <p>Click para subir imagen</p>
-          <p><small>JPG, PNG - Max 10MB</small></p>
+          <p>Selecciona una categoria primero</p>
+          <p><small>JPG, PNG, WEBP - Max 10MB</small></p>
         </div>
+
+        <button class="btn upload-btn" id="uploadBtn" style="display: none; margin-top: 1rem;">
+          Subir imagen a Cloudinary
+        </button>
 
         <div id="successMsg" class="success-msg" style="display: none;">
           Imagen subida correctamente!
@@ -713,8 +717,14 @@
       bindEvents() {
         UIController.elements.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         UIController.elements.filterCategory.addEventListener('change', () => this.loadImages());
-        UIController.elements.uploadArea.addEventListener('click', () => this.handleUpload());
 
+        // Upload button (new - replaces click on upload area)
+        const uploadBtn = document.getElementById('uploadBtn');
+        if (uploadBtn) {
+          uploadBtn.addEventListener('click', () => this.handleUpload());
+        }
+
+        // Category selection
         document.querySelectorAll('.category-option').forEach(option => {
           option.addEventListener('click', () => this.selectCategory(option));
         });
@@ -793,6 +803,19 @@
         document.querySelectorAll('.category-option').forEach(o => o.classList.remove('selected'));
         option.classList.add('selected');
         UIController.selectedCategory = option.dataset.category;
+
+        // Show upload button and update upload area text
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadArea = document.getElementById('uploadArea');
+
+        if (uploadBtn) {
+          uploadBtn.style.display = 'block';
+          uploadBtn.textContent = `Subir imagen a ${option.querySelector('span').textContent}`;
+        }
+
+        if (uploadArea) {
+          uploadArea.querySelector('p').textContent = `Categoria: ${option.querySelector('span').textContent}`;
+        }
       },
 
       async handleUpload() {
@@ -802,6 +825,12 @@
         }
 
         try {
+          const uploadBtn = document.getElementById('uploadBtn');
+          if (uploadBtn) {
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Preparando...';
+          }
+
           const config = await ApiService.getUploadSignature(UIController.selectedCategory);
           UIController.cloudConfig = config;
 
@@ -815,35 +844,74 @@
             multiple: true,
             maxFileSize: 10000000,
             clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+            showAdvancedOptions: false,
+            cropping: false,
             styles: {
               palette: {
-                window: "#1a1a1a",
-                windowBorder: "#ff00ff",
-                tabIcon: "#00ffff",
-                menuIcons: "#00ffff",
+                window: "#0a0a0a",
+                windowBorder: "#333333",
+                tabIcon: "#ff00ff",
+                menuIcons: "#ffffff",
                 textDark: "#000000",
-                textLight: "#f0f0f0",
+                textLight: "#ffffff",
                 link: "#ff00ff",
-                action: "#ff00ff",
-                inactiveTabIcon: "#666666",
-                error: "#ff1493",
+                action: "#00ffff",
+                inactiveTabIcon: "#555555",
+                error: "#ff4444",
                 inProgress: "#00ffff",
-                complete: "#00ff00",
-                sourceBg: "#111111"
+                complete: "#33ff33",
+                sourceBg: "#1a1a1a"
+              },
+              fonts: {
+                default: null,
+                "'Quicksand', sans-serif": {
+                  url: "https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700",
+                  active: true
+                }
               }
             }
           }, (error, result) => {
-            if (!error && result && result.event === "success") {
+            if (error) {
+              console.error('Upload error:', error);
+              return;
+            }
+
+            if (result.event === "success") {
+              console.log('Upload successful:', result.info.public_id);
               UIController.showSuccess();
-              this.loadStats();
-              this.loadImages();
+              // Use App instead of this
+              App.loadStats();
+              App.loadImages();
+            }
+
+            if (result.event === "close") {
+              // Re-enable button when widget closes
+              const uploadBtn = document.getElementById('uploadBtn');
+              if (uploadBtn && UIController.selectedCategory) {
+                uploadBtn.disabled = false;
+                const categoryName = document.querySelector('.category-option.selected span');
+                uploadBtn.textContent = `Subir imagen a ${categoryName ? categoryName.textContent : 'categoria'}`;
+              }
             }
           });
 
           widget.open();
+
+          // Re-enable button after widget opens
+          if (uploadBtn) {
+            uploadBtn.disabled = false;
+            const categoryName = document.querySelector('.category-option.selected span');
+            uploadBtn.textContent = `Subir imagen a ${categoryName ? categoryName.textContent : 'categoria'}`;
+          }
         } catch (error) {
           console.error('Error getting upload signature:', error);
           alert('Error preparando subida');
+
+          const uploadBtn = document.getElementById('uploadBtn');
+          if (uploadBtn) {
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Subir imagen';
+          }
         }
       },
 
