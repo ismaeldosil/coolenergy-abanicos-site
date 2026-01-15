@@ -3,8 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Cool Energy Abanicos - Abanicos premium para festivales y raves. Hechos en Uruguay con amor. RAVE, MEDIUM, Personalizados.">
+  <meta name="description" content="Cool Energy Abanicos - Abanicos premium para festivales y raves. Hechos en Uruguay con amor. RAVE XL, RAVE L, MEDIUM, Personalizados.">
+  <meta name="keywords" content="abanicos, rave, festival, uruguay, montevideo, bambu, nylon, personalizados, cool energy">
+  <meta name="author" content="Cool Energy Abanicos">
   <meta name="theme-color" content="#0a0a0a">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://web-production-8584.up.railway.app/">
+  <meta property="og:title" content="Cool Energy Abanicos | Abanicos Rave & Festival Premium">
+  <meta property="og:description" content="Abanicos premium para festivales y raves. Hechos en Uruguay con amor. Bambu, nylon, diseños unicos.">
+  <meta property="og:image" content="https://web-production-8584.up.railway.app/images/og-image.png">
+  <meta property="og:locale" content="es_UY">
+  <meta property="og:site_name" content="Cool Energy Abanicos">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:url" content="https://web-production-8584.up.railway.app/">
+  <meta name="twitter:title" content="Cool Energy Abanicos | Abanicos Rave & Festival Premium">
+  <meta name="twitter:description" content="Abanicos premium para festivales y raves. Hechos en Uruguay con amor.">
+  <meta name="twitter:image" content="https://web-production-8584.up.railway.app/images/og-image.png">
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://web-production-8584.up.railway.app/">
 
   <title>Cool Energy Abanicos | Abanicos Rave & Festival Premium</title>
 
@@ -18,6 +39,7 @@
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="apple-touch-icon" href="images/favicon.png">
 </head>
 <body>
 
@@ -647,5 +669,72 @@
 
   <!-- Scripts -->
   <script src="js/main.js"></script>
+
+  <!-- Analytics -->
+  <script>
+    (function() {
+      // Generate or get session ID
+      const getSessionId = () => {
+        let sessionId = sessionStorage.getItem('ce_session');
+        if (!sessionId) {
+          sessionId = 'ce_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+          sessionStorage.setItem('ce_session', sessionId);
+        }
+        return sessionId;
+      };
+
+      // Track pageview
+      const trackPageview = () => {
+        fetch('/api/analytics/pageview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            page: window.location.pathname + window.location.hash,
+            referrer: document.referrer || '',
+            sessionId: getSessionId()
+          })
+        }).catch(() => {});
+      };
+
+      // Track event
+      const trackEvent = (event, data = {}) => {
+        fetch('/api/analytics/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event, data })
+        }).catch(() => {});
+      };
+
+      // Track initial pageview
+      trackPageview();
+
+      // Track hash changes (SPA navigation)
+      window.addEventListener('hashchange', trackPageview);
+
+      // Track WhatsApp clicks
+      document.querySelectorAll('a[href*="wa.me"]').forEach(link => {
+        link.addEventListener('click', () => {
+          trackEvent('whatsapp_click', { href: link.href });
+        });
+      });
+
+      // Track category clicks
+      document.querySelectorAll('.category-card').forEach(card => {
+        card.addEventListener('click', () => {
+          trackEvent('category_click', { category: card.dataset.category });
+        });
+      });
+
+      // Track filter clicks
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          trackEvent('filter_click', { filter: btn.dataset.filter });
+        });
+      });
+
+      // Expose for manual tracking
+      window.CoolEnergyAnalytics = { trackEvent, trackPageview };
+    })();
+  </script>
 </body>
 </html>

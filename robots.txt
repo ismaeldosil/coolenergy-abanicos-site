@@ -1,0 +1,10 @@
+# Cool Energy Abanicos - robots.txt
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://web-production-8584.up.railway.app/sitemap.xml
+
+# Disallow admin
+Disallow: /admin.html
+Disallow: /api/

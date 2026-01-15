@@ -137,6 +137,12 @@
       box-shadow: 0 4px 20px rgba(255, 0, 255, 0.3);
     }
 
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     .error {
       color: var(--neon-pink);
       text-align: center;
@@ -320,6 +326,7 @@
       color: var(--text-secondary);
       cursor: pointer;
       font-family: inherit;
+      z-index: 10;
     }
 
     .logout-btn:hover {
@@ -353,6 +360,32 @@
       margin-top: 0.25rem;
     }
 
+    /* Analytics Card */
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    .analytics-stat {
+      background: var(--bg-secondary);
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .analytics-stat .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+    }
+
+    .analytics-stat .label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
     @media (max-width: 600px) {
       .category-select {
         grid-template-columns: 1fr;
@@ -360,12 +393,15 @@
       .stats {
         grid-template-columns: repeat(2, 1fr);
       }
+      .analytics-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <a href="/" class="back-link">← Volver al sitio</a>
+    <a href="/" class="back-link">&larr; Volver al sitio</a>
     <h1>Cool Energy Admin</h1>
     <p class="subtitle">Gestion de abanicos</p>
 
@@ -373,18 +409,35 @@
     <div class="login-screen" id="loginScreen">
       <div class="login-box">
         <h2>Ingresar</h2>
-        <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="passwordInput" placeholder="Ingresa el password">
-        </div>
-        <button class="btn" onclick="login()">Entrar</button>
-        <p class="error" id="loginError" style="display: none;">Password incorrecto</p>
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="passwordInput">Password</label>
+            <input type="password" id="passwordInput" placeholder="Ingresa el password" required autocomplete="current-password">
+          </div>
+          <button type="submit" class="btn" id="loginBtn">Entrar</button>
+        </form>
+        <p class="error" id="loginError" style="display: none;"></p>
       </div>
     </div>
 
     <!-- Admin Panel -->
     <div class="admin-panel" id="adminPanel">
       <button class="logout-btn" onclick="logout()">Salir</button>
+
+      <!-- Analytics -->
+      <div class="card">
+        <h3>Analytics</h3>
+        <div class="analytics-grid">
+          <div class="analytics-stat">
+            <div class="value" id="analyticsPageviews">-</div>
+            <div class="label">Visitas hoy</div>
+          </div>
+          <div class="analytics-stat">
+            <div class="value" id="analyticsSessions">-</div>
+            <div class="label">Sesiones unicas</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Stats -->
       <div class="stats" id="stats">
@@ -432,7 +485,7 @@
 
         <label>2. Sube la imagen:</label>
         <div class="upload-area" id="uploadArea">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
@@ -450,6 +503,7 @@
       <div class="card">
         <h3>Imagenes subidas</h3>
         <div class="form-group">
+          <label for="filterCategory">Filtrar por categoria</label>
           <select id="filterCategory">
             <option value="all">Todas las categorias</option>
             <option value="rave-xl">RAVE XL</option>
@@ -469,214 +523,357 @@
   <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
 
   <script>
-    // Config
-    const ADMIN_PASSWORD = 'coolenergy2024';
+    // ================== Auth Service ==================
+    const AuthService = {
+      tokenKey: 'adminToken',
 
-    let selectedCategory = null;
-    let allImages = [];
-    let cloudConfig = null;
+      getToken() {
+        return localStorage.getItem(this.tokenKey);
+      },
 
-    // Check if already logged in
-    if (sessionStorage.getItem('adminLoggedIn') === 'true') {
-      showAdminPanel();
-    }
+      setToken(token) {
+        localStorage.setItem(this.tokenKey, token);
+      },
 
-    // Login
-    function login() {
-      const password = document.getElementById('passwordInput').value;
-      if (password === ADMIN_PASSWORD) {
-        sessionStorage.setItem('adminLoggedIn', 'true');
-        showAdminPanel();
-      } else {
-        document.getElementById('loginError').style.display = 'block';
+      removeToken() {
+        localStorage.removeItem(this.tokenKey);
+      },
+
+      isAuthenticated() {
+        const token = this.getToken();
+        if (!token) return false;
+
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          return payload.exp * 1000 > Date.now();
+        } catch {
+          return false;
+        }
+      },
+
+      getAuthHeaders() {
+        const token = this.getToken();
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
       }
-    }
+    };
 
-    // Enter key to login
-    document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') login();
-    });
+    // ================== API Service ==================
+    const ApiService = {
+      async request(url, options = {}) {
+        const headers = {
+          'Content-Type': 'application/json',
+          ...AuthService.getAuthHeaders(),
+          ...options.headers
+        };
 
-    function logout() {
-      sessionStorage.removeItem('adminLoggedIn');
-      location.reload();
-    }
+        const response = await fetch(url, { ...options, headers });
 
-    async function showAdminPanel() {
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('adminPanel').classList.add('active');
-      await loadStats();
-      await loadImages();
-    }
+        if (response.status === 401 || response.status === 403) {
+          AuthService.removeToken();
+          location.reload();
+          return;
+        }
 
-    // Category selection
-    document.querySelectorAll('.category-option').forEach(option => {
-      option.addEventListener('click', () => {
-        document.querySelectorAll('.category-option').forEach(o => o.classList.remove('selected'));
-        option.classList.add('selected');
-        selectedCategory = option.dataset.category;
-        initUploadWidget();
-      });
-    });
+        return response.json();
+      },
 
-    // Initialize upload widget with signed upload
-    async function initUploadWidget() {
-      if (!selectedCategory) return;
-
-      try {
-        const response = await fetch('/api/upload/signature', {
+      async login(password) {
+        return this.request('/api/auth/login', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ category: selectedCategory })
+          body: JSON.stringify({ password })
         });
-        cloudConfig = await response.json();
-      } catch (error) {
-        console.error('Error getting upload signature:', error);
+      },
+
+      async getStats() {
+        return this.request('/api/stats');
+      },
+
+      async getImages(category = 'all') {
+        return this.request(`/api/images?category=${category}`);
+      },
+
+      async getUploadSignature(category) {
+        return this.request('/api/upload/signature', {
+          method: 'POST',
+          body: JSON.stringify({ category })
+        });
+      },
+
+      async deleteImage(publicId) {
+        return this.request(`/api/images/${encodeURIComponent(publicId)}`, {
+          method: 'DELETE'
+        });
+      },
+
+      async getAnalytics() {
+        return this.request('/api/analytics');
       }
-    }
+    };
 
-    // Create upload widget
-    function createUploadWidget() {
-      if (!cloudConfig) return null;
+    // ================== UI Controller ==================
+    const UIController = {
+      elements: {
+        loginScreen: document.getElementById('loginScreen'),
+        adminPanel: document.getElementById('adminPanel'),
+        loginForm: document.getElementById('loginForm'),
+        loginError: document.getElementById('loginError'),
+        loginBtn: document.getElementById('loginBtn'),
+        passwordInput: document.getElementById('passwordInput'),
+        uploadedImages: document.getElementById('uploadedImages'),
+        filterCategory: document.getElementById('filterCategory'),
+        uploadArea: document.getElementById('uploadArea'),
+        successMsg: document.getElementById('successMsg')
+      },
 
-      return cloudinary.createUploadWidget({
-        cloudName: cloudConfig.cloud_name,
-        apiKey: cloudConfig.api_key,
-        uploadSignature: cloudConfig.signature,
-        uploadSignatureTimestamp: cloudConfig.timestamp,
-        folder: cloudConfig.folder,
-        sources: ['local', 'camera'],
-        multiple: true,
-        maxFileSize: 10000000,
-        clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
-        styles: {
-          palette: {
-            window: "#1a1a1a",
-            windowBorder: "#ff00ff",
-            tabIcon: "#00ffff",
-            menuIcons: "#00ffff",
-            textDark: "#000000",
-            textLight: "#f0f0f0",
-            link: "#ff00ff",
-            action: "#ff00ff",
-            inactiveTabIcon: "#666666",
-            error: "#ff1493",
-            inProgress: "#00ffff",
-            complete: "#00ff00",
-            sourceBg: "#111111"
-          }
+      selectedCategory: null,
+      cloudConfig: null,
+
+      showError(message) {
+        this.elements.loginError.textContent = message;
+        this.elements.loginError.style.display = 'block';
+      },
+
+      hideError() {
+        this.elements.loginError.style.display = 'none';
+      },
+
+      showAdminPanel() {
+        this.elements.loginScreen.style.display = 'none';
+        this.elements.adminPanel.classList.add('active');
+      },
+
+      showLoginScreen() {
+        this.elements.loginScreen.style.display = 'flex';
+        this.elements.adminPanel.classList.remove('active');
+      },
+
+      setLoading(isLoading) {
+        this.elements.loginBtn.disabled = isLoading;
+        this.elements.loginBtn.textContent = isLoading ? 'Cargando...' : 'Entrar';
+      },
+
+      updateStats(stats) {
+        document.getElementById('statTotal').textContent = stats.total || 0;
+        document.getElementById('statRaveXL').textContent = stats['rave-xl'] || 0;
+        document.getElementById('statRaveL').textContent = stats['rave-l'] || 0;
+        document.getElementById('statMedium').textContent = stats['medium'] || 0;
+      },
+
+      updateAnalytics(analytics) {
+        document.getElementById('analyticsPageviews').textContent = analytics.todayPageviews || 0;
+        document.getElementById('analyticsSessions').textContent = analytics.uniqueSessions || 0;
+      },
+
+      renderImages(images) {
+        if (!images || images.length === 0) {
+          this.elements.uploadedImages.innerHTML = '<p style="color: var(--text-secondary); text-align: center; grid-column: 1/-1;">No hay imagenes en esta categoria.</p>';
+          return;
         }
-      }, (error, result) => {
-        if (!error && result && result.event === "success") {
-          document.getElementById('successMsg').style.display = 'block';
-          setTimeout(() => {
-            document.getElementById('successMsg').style.display = 'none';
-          }, 3000);
-          loadStats();
-          loadImages();
-        }
-      });
-    }
 
-    document.getElementById('uploadArea').addEventListener('click', async () => {
-      if (!selectedCategory) {
-        alert('Primero selecciona una categoria');
-        return;
-      }
-      await initUploadWidget();
-      const widget = createUploadWidget();
-      if (widget) {
-        widget.open();
-      }
-    });
-
-    // Load stats from backend
-    async function loadStats() {
-      try {
-        const response = await fetch('/api/stats');
-        const data = await response.json();
-        if (data.success) {
-          document.getElementById('statTotal').textContent = data.stats.total || 0;
-          document.getElementById('statRaveXL').textContent = data.stats['rave-xl'] || 0;
-          document.getElementById('statRaveL').textContent = data.stats['rave-l'] || 0;
-          document.getElementById('statMedium').textContent = data.stats['medium'] || 0;
-        }
-      } catch (error) {
-        console.error('Error loading stats:', error);
-      }
-    }
-
-    // Load images from backend
-    async function loadImages() {
-      const container = document.getElementById('uploadedImages');
-      const filter = document.getElementById('filterCategory').value;
-      container.innerHTML = '<div class="loading">Cargando imagenes...</div>';
-
-      try {
-        const response = await fetch(`/api/images?category=${filter}`);
-        const data = await response.json();
-
-        if (data.success && data.images.length > 0) {
-          allImages = data.images;
-          renderImages(allImages);
-        } else {
-          container.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No hay imagenes en esta categoria. Sube la primera!</p>';
-        }
-      } catch (error) {
-        console.error('Error loading images:', error);
-        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">Error cargando imagenes.</p>';
-      }
-    }
-
-    function renderImages(images) {
-      const container = document.getElementById('uploadedImages');
-
-      if (images.length === 0) {
-        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No hay imagenes en esta categoria.</p>';
-        return;
-      }
-
-      container.innerHTML = images.map(img => {
-        return `
+        this.elements.uploadedImages.innerHTML = images.map(img => `
           <div class="uploaded-item">
-            <img src="${img.thumbnail}" alt="Abanico" loading="lazy">
-            <span class="badge">${img.category}</span>
-            <button class="delete-btn" onclick="deleteImage('${img.public_id}')" title="Eliminar">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <img src="${this.escapeHtml(img.thumbnail)}" alt="Abanico ${this.escapeHtml(img.category)}" loading="lazy">
+            <span class="badge">${this.escapeHtml(img.category)}</span>
+            <button class="delete-btn" onclick="App.deleteImage('${this.escapeHtml(img.public_id)}')" title="Eliminar" aria-label="Eliminar imagen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
             </button>
           </div>
-        `;
-      }).join('');
-    }
+        `).join('');
+      },
 
-    // Filter change
-    document.getElementById('filterCategory').addEventListener('change', () => {
-      loadImages();
-    });
+      escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      },
 
-    // Delete image via backend
-    async function deleteImage(publicId) {
-      if (!confirm('Eliminar esta imagen?')) return;
-
-      try {
-        const response = await fetch(`/api/images/${encodeURIComponent(publicId)}`, {
-          method: 'DELETE'
-        });
-        const data = await response.json();
-
-        if (data.success) {
-          loadStats();
-          loadImages();
-        } else {
-          alert('Error eliminando imagen: ' + data.error);
-        }
-      } catch (error) {
-        console.error('Error deleting image:', error);
-        alert('Error eliminando imagen');
+      showSuccess() {
+        this.elements.successMsg.style.display = 'block';
+        setTimeout(() => {
+          this.elements.successMsg.style.display = 'none';
+        }, 3000);
       }
+    };
+
+    // ================== App Controller ==================
+    const App = {
+      async init() {
+        this.bindEvents();
+
+        if (AuthService.isAuthenticated()) {
+          UIController.showAdminPanel();
+          await this.loadDashboard();
+        } else {
+          UIController.showLoginScreen();
+        }
+      },
+
+      bindEvents() {
+        UIController.elements.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
+        UIController.elements.filterCategory.addEventListener('change', () => this.loadImages());
+        UIController.elements.uploadArea.addEventListener('click', () => this.handleUpload());
+
+        document.querySelectorAll('.category-option').forEach(option => {
+          option.addEventListener('click', () => this.selectCategory(option));
+        });
+      },
+
+      async handleLogin(e) {
+        e.preventDefault();
+        UIController.hideError();
+        UIController.setLoading(true);
+
+        try {
+          const password = UIController.elements.passwordInput.value;
+          const result = await ApiService.login(password);
+
+          if (result.success && result.token) {
+            AuthService.setToken(result.token);
+            UIController.showAdminPanel();
+            await this.loadDashboard();
+          } else {
+            UIController.showError(result.error || 'Error de autenticacion');
+          }
+        } catch (error) {
+          UIController.showError('Error de conexion');
+        } finally {
+          UIController.setLoading(false);
+        }
+      },
+
+      async loadDashboard() {
+        await Promise.all([
+          this.loadStats(),
+          this.loadImages(),
+          this.loadAnalytics()
+        ]);
+      },
+
+      async loadStats() {
+        try {
+          const result = await ApiService.getStats();
+          if (result.success) {
+            UIController.updateStats(result.stats);
+          }
+        } catch (error) {
+          console.error('Error loading stats:', error);
+        }
+      },
+
+      async loadImages() {
+        UIController.elements.uploadedImages.innerHTML = '<div class="loading">Cargando imagenes...</div>';
+
+        try {
+          const filter = UIController.elements.filterCategory.value;
+          const result = await ApiService.getImages(filter);
+
+          if (result.success) {
+            UIController.renderImages(result.images);
+          }
+        } catch (error) {
+          console.error('Error loading images:', error);
+          UIController.elements.uploadedImages.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">Error cargando imagenes.</p>';
+        }
+      },
+
+      async loadAnalytics() {
+        try {
+          const result = await ApiService.getAnalytics();
+          if (result.success) {
+            UIController.updateAnalytics(result.analytics);
+          }
+        } catch (error) {
+          console.error('Error loading analytics:', error);
+        }
+      },
+
+      selectCategory(option) {
+        document.querySelectorAll('.category-option').forEach(o => o.classList.remove('selected'));
+        option.classList.add('selected');
+        UIController.selectedCategory = option.dataset.category;
+      },
+
+      async handleUpload() {
+        if (!UIController.selectedCategory) {
+          alert('Primero selecciona una categoria');
+          return;
+        }
+
+        try {
+          const config = await ApiService.getUploadSignature(UIController.selectedCategory);
+          UIController.cloudConfig = config;
+
+          const widget = cloudinary.createUploadWidget({
+            cloudName: config.cloud_name,
+            apiKey: config.api_key,
+            uploadSignature: config.signature,
+            uploadSignatureTimestamp: config.timestamp,
+            folder: config.folder,
+            sources: ['local', 'camera'],
+            multiple: true,
+            maxFileSize: 10000000,
+            clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+            styles: {
+              palette: {
+                window: "#1a1a1a",
+                windowBorder: "#ff00ff",
+                tabIcon: "#00ffff",
+                menuIcons: "#00ffff",
+                textDark: "#000000",
+                textLight: "#f0f0f0",
+                link: "#ff00ff",
+                action: "#ff00ff",
+                inactiveTabIcon: "#666666",
+                error: "#ff1493",
+                inProgress: "#00ffff",
+                complete: "#00ff00",
+                sourceBg: "#111111"
+              }
+            }
+          }, (error, result) => {
+            if (!error && result && result.event === "success") {
+              UIController.showSuccess();
+              this.loadStats();
+              this.loadImages();
+            }
+          });
+
+          widget.open();
+        } catch (error) {
+          console.error('Error getting upload signature:', error);
+          alert('Error preparando subida');
+        }
+      },
+
+      async deleteImage(publicId) {
+        if (!confirm('Eliminar esta imagen?')) return;
+
+        try {
+          const result = await ApiService.deleteImage(publicId);
+
+          if (result.success) {
+            this.loadStats();
+            this.loadImages();
+          } else {
+            alert('Error eliminando imagen: ' + result.error);
+          }
+        } catch (error) {
+          console.error('Error deleting image:', error);
+          alert('Error eliminando imagen');
+        }
+      }
+    };
+
+    // Logout function (global for onclick)
+    function logout() {
+      AuthService.removeToken();
+      location.reload();
     }
+
+    // Initialize app
+    App.init();
   </script>
 </body>
 </html>
