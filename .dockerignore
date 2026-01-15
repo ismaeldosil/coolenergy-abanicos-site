@@ -1,0 +1,16 @@
+# Exclude large product images - they're served from Cloudinary
+images/*.png
+images/*.jpg
+!images/logo.png
+!images/favicon.png
+!images/hero-bg.png
+!images/texture-bg.png
+
+# Node modules will be installed fresh
+node_modules/
+
+# Git
+.git/
+
+# Logs
+*.log
