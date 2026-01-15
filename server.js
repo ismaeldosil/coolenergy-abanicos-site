@@ -7,9 +7,14 @@ app.use(express.json());
 
 // Cloudinary config
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dzljtlgbc',
-  api_key: process.env.CLOUDINARY_API_KEY || '572464383683723',
-  api_secret: process.env.CLOUDINARY_API_SECRET || 'bNX5o_js_jKJt8RGshjyPgV41tI'
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dpjfcgmpe',
+  api_key: process.env.CLOUDINARY_API_KEY || '184998516246899',
+  api_secret: process.env.CLOUDINARY_API_SECRET || 'OKd0GHsYtysdKUH_rNCqYcHU5qw'
+});
+
+// Health check endpoint for Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 // Serve static files
@@ -67,15 +72,15 @@ app.post('/api/upload/signature', (req, res) => {
 
   const signature = cloudinary.utils.api_sign_request(
     { timestamp, folder },
-    process.env.CLOUDINARY_API_SECRET || 'bNX5o_js_jKJt8RGshjyPgV41tI'
+    process.env.CLOUDINARY_API_SECRET || 'OKd0GHsYtysdKUH_rNCqYcHU5qw'
   );
 
   res.json({
     signature,
     timestamp,
     folder,
-    api_key: process.env.CLOUDINARY_API_KEY || '572464383683723',
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dzljtlgbc'
+    api_key: process.env.CLOUDINARY_API_KEY || '184998516246899',
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || 'dpjfcgmpe'
   });
 });
 
