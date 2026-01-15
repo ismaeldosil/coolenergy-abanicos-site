@@ -288,7 +288,7 @@ img {
   position: relative;
   z-index: 2;
   max-width: 900px;
-  padding-top: 1em;
+  padding-top: 4em;
   animation: heroFadeIn 1s ease forwards;
 }
 
