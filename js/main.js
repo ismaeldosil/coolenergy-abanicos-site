@@ -243,16 +243,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // =====================================
-  // Load Cloudinary Images
+  // Load Cloudinary Images (Dynamic Gallery)
   // =====================================
   async function loadCloudinaryImages() {
+    const galleryGrid = document.getElementById('galleryGrid');
+    const loadingEl = document.getElementById('galleryLoading');
+
     try {
       const response = await fetch('/api/images?category=all');
       const data = await response.json();
 
-      if (data.success && data.images.length > 0) {
-        const galleryGrid = document.getElementById('galleryGrid');
+      // Clear loading state
+      if (loadingEl) loadingEl.remove();
 
+      if (data.success && data.images.length > 0) {
+        // Clear any existing content
+        galleryGrid.innerHTML = '';
+
+        // Add all images from Cloudinary
         data.images.forEach(img => {
           const card = createProductCard(img);
           galleryGrid.appendChild(card);
@@ -260,9 +268,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Re-attach filter listeners for new cards
         attachFilterListeners();
+      } else {
+        // Show empty state
+        galleryGrid.innerHTML = `
+          <div class="gallery-empty">
+            <p>Aun no hay abanicos en la galeria.</p>
+            <p>Pronto agregaremos mas diseños!</p>
+            <a href="https://wa.me/59895192300?text=Hola!%20Quiero%20ver%20abanicos" class="btn btn-secondary" target="_blank">
+              Consultanos por WhatsApp
+            </a>
+          </div>
+        `;
       }
     } catch (error) {
-      console.log('No hay imagenes en Cloudinary todavia');
+      console.error('Error cargando galeria:', error);
+      if (loadingEl) loadingEl.remove();
+      galleryGrid.innerHTML = `
+        <div class="gallery-empty">
+          <p>Error cargando la galeria.</p>
+          <a href="https://wa.me/59895192300?text=Hola!%20Quiero%20ver%20abanicos" class="btn btn-secondary" target="_blank">
+            Consultanos por WhatsApp
+          </a>
+        </div>
+      `;
     }
   }
 
