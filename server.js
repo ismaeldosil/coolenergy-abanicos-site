@@ -10,20 +10,11 @@ const bcrypt = require('bcryptjs');
 
 const app = express();
 
-// Security: Helmet for HTTP headers
+// Security: Helmet for HTTP headers (relaxed CSP for Cloudinary)
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://*.cloudinary.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://upload-widget.cloudinary.com"],
-      frameSrc: ["https://upload-widget.cloudinary.com"],
-      connectSrc: ["'self'", "https://api.cloudinary.com", "https://*.cloudinary.com"]
-    }
-  },
-  crossOriginEmbedderPolicy: false
+  contentSecurityPolicy: false, // Disable CSP to allow Cloudinary images
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
 // Performance: Compression
