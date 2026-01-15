@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin - Cool Energy Abanicos</title>
+  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #111111;
+      --bg-card: #1a1a1a;
+      --text-primary: #f0f0f0;
+      --text-secondary: #a0a0a0;
+      --neon-magenta: #ff00ff;
+      --neon-cyan: #00ffff;
+      --neon-pink: #ff1493;
+      --gradient-neon: linear-gradient(90deg, #ff00ff, #00ffff);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Quicksand', sans-serif;
+      background: url('images/hero-bg.png') center center / cover no-repeat fixed;
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 2rem;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 10, 10, 0.85);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+      background: var(--gradient-neon);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    /* Login Screen */
+    .login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+    }
+
+    .login-box {
+      background: var(--bg-card);
+      padding: 2rem;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-box h2 {
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 1rem;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--neon-cyan);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: var(--gradient-neon);
+      color: var(--bg-primary);
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(255, 0, 255, 0.3);
+    }
+
+    .error {
+      color: var(--neon-pink);
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+
+    /* Admin Panel */
+    .admin-panel {
+      display: none;
+    }
+
+    .admin-panel.active {
+      display: block;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card h3 {
+      margin-bottom: 1rem;
+      color: var(--neon-cyan);
+    }
+
+    .upload-area {
+      border: 2px dashed rgba(255,255,255,0.2);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.3s, background 0.3s;
+    }
+
+    .upload-area:hover {
+      border-color: var(--neon-magenta);
+      background: rgba(255, 0, 255, 0.05);
+    }
+
+    .upload-area svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .upload-area p {
+      color: var(--text-secondary);
+    }
+
+    .category-select {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .category-option {
+      padding: 1rem;
+      border: 2px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .category-option:hover {
+      border-color: rgba(255,255,255,0.3);
+    }
+
+    .category-option.selected {
+      border-color: var(--neon-magenta);
+      background: rgba(255, 0, 255, 0.1);
+    }
+
+    .category-option span {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .category-option small {
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+    }
+
+    /* Uploaded Images */
+    .uploaded-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .uploaded-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--bg-secondary);
+    }
+
+    .uploaded-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .uploaded-item .badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      padding: 4px 8px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 4px;
+      font-size: 0.7rem;
+      color: var(--neon-cyan);
+    }
+
+    .uploaded-item .delete-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 20, 147, 0.9);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .uploaded-item:hover .delete-btn {
+      opacity: 1;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+    }
+
+    .success-msg {
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid var(--neon-cyan);
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+      margin-bottom: 1rem;
+      color: var(--neon-cyan);
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    .back-link:hover {
+      color: var(--neon-cyan);
+    }
+
+    .logout-btn {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      padding: 8px 16px;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .logout-btn:hover {
+      border-color: var(--neon-pink);
+      color: var(--neon-pink);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--bg-secondary);
+      padding: 1rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-card .number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--neon-magenta);
+    }
+
+    .stat-card .label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+
+    @media (max-width: 600px) {
+      .category-select {
+        grid-template-columns: 1fr;
+      }
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/" class="back-link">← Volver al sitio</a>
+    <h1>Cool Energy Admin</h1>
+    <p class="subtitle">Gestion de abanicos</p>
+
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+      <div class="login-box">
+        <h2>Ingresar</h2>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="passwordInput" placeholder="Ingresa el password">
+        </div>
+        <button class="btn" onclick="login()">Entrar</button>
+        <p class="error" id="loginError" style="display: none;">Password incorrecto</p>
+      </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="admin-panel" id="adminPanel">
+      <button class="logout-btn" onclick="logout()">Salir</button>
+
+      <!-- Stats -->
+      <div class="stats" id="stats">
+        <div class="stat-card">
+          <div class="number" id="statTotal">-</div>
+          <div class="label">Total</div>
+        </div>
+        <div class="stat-card">
+          <div class="number" id="statRaveXL">-</div>
+          <div class="label">RAVE XL</div>
+        </div>
+        <div class="stat-card">
+          <div class="number" id="statRaveL">-</div>
+          <div class="label">RAVE L</div>
+        </div>
+        <div class="stat-card">
+          <div class="number" id="statMedium">-</div>
+          <div class="label">MEDIUM</div>
+        </div>
+      </div>
+
+      <!-- Upload Card -->
+      <div class="card">
+        <h3>Subir nuevo abanico</h3>
+
+        <label>1. Selecciona la categoria:</label>
+        <div class="category-select" id="categorySelect">
+          <div class="category-option" data-category="rave-xl">
+            <span>RAVE XL</span>
+            <small>66cm - Festivales</small>
+          </div>
+          <div class="category-option" data-category="rave-l">
+            <span>RAVE L</span>
+            <small>50cm - Versatil</small>
+          </div>
+          <div class="category-option" data-category="medium">
+            <span>MEDIUM</span>
+            <small>40cm - Diario</small>
+          </div>
+          <div class="category-option" data-category="personalizados">
+            <span>PERSONALIZADOS</span>
+            <small>A pedido</small>
+          </div>
+        </div>
+
+        <label>2. Sube la imagen:</label>
+        <div class="upload-area" id="uploadArea">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          <p>Click para subir imagen</p>
+          <p><small>JPG, PNG - Max 10MB</small></p>
+        </div>
+
+        <div id="successMsg" class="success-msg" style="display: none;">
+          Imagen subida correctamente!
+        </div>
+      </div>
+
+      <!-- Gallery Card -->
+      <div class="card">
+        <h3>Imagenes subidas</h3>
+        <div class="form-group">
+          <select id="filterCategory">
+            <option value="all">Todas las categorias</option>
+            <option value="rave-xl">RAVE XL</option>
+            <option value="rave-l">RAVE L</option>
+            <option value="medium">MEDIUM</option>
+            <option value="personalizados">Personalizados</option>
+          </select>
+        </div>
+        <div id="uploadedImages" class="uploaded-grid">
+          <div class="loading">Cargando imagenes...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cloudinary Widget -->
+  <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
+
+  <script>
+    // Config
+    const ADMIN_PASSWORD = 'coolenergy2024';
+
+    let selectedCategory = null;
+    let allImages = [];
+    let cloudConfig = null;
+
+    // Check if already logged in
+    if (sessionStorage.getItem('adminLoggedIn') === 'true') {
+      showAdminPanel();
+    }
+
+    // Login
+    function login() {
+      const password = document.getElementById('passwordInput').value;
+      if (password === ADMIN_PASSWORD) {
+        sessionStorage.setItem('adminLoggedIn', 'true');
+        showAdminPanel();
+      } else {
+        document.getElementById('loginError').style.display = 'block';
+      }
+    }
+
+    // Enter key to login
+    document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') login();
+    });
+
+    function logout() {
+      sessionStorage.removeItem('adminLoggedIn');
+      location.reload();
+    }
+
+    async function showAdminPanel() {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminPanel').classList.add('active');
+      await loadStats();
+      await loadImages();
+    }
+
+    // Category selection
+    document.querySelectorAll('.category-option').forEach(option => {
+      option.addEventListener('click', () => {
+        document.querySelectorAll('.category-option').forEach(o => o.classList.remove('selected'));
+        option.classList.add('selected');
+        selectedCategory = option.dataset.category;
+        initUploadWidget();
+      });
+    });
+
+    // Initialize upload widget with signed upload
+    async function initUploadWidget() {
+      if (!selectedCategory) return;
+
+      try {
+        const response = await fetch('/api/upload/signature', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category: selectedCategory })
+        });
+        cloudConfig = await response.json();
+      } catch (error) {
+        console.error('Error getting upload signature:', error);
+      }
+    }
+
+    // Create upload widget
+    function createUploadWidget() {
+      if (!cloudConfig) return null;
+
+      return cloudinary.createUploadWidget({
+        cloudName: cloudConfig.cloud_name,
+        apiKey: cloudConfig.api_key,
+        uploadSignature: cloudConfig.signature,
+        uploadSignatureTimestamp: cloudConfig.timestamp,
+        folder: cloudConfig.folder,
+        sources: ['local', 'camera'],
+        multiple: true,
+        maxFileSize: 10000000,
+        clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
+        styles: {
+          palette: {
+            window: "#1a1a1a",
+            windowBorder: "#ff00ff",
+            tabIcon: "#00ffff",
+            menuIcons: "#00ffff",
+            textDark: "#000000",
+            textLight: "#f0f0f0",
+            link: "#ff00ff",
+            action: "#ff00ff",
+            inactiveTabIcon: "#666666",
+            error: "#ff1493",
+            inProgress: "#00ffff",
+            complete: "#00ff00",
+            sourceBg: "#111111"
+          }
+        }
+      }, (error, result) => {
+        if (!error && result && result.event === "success") {
+          document.getElementById('successMsg').style.display = 'block';
+          setTimeout(() => {
+            document.getElementById('successMsg').style.display = 'none';
+          }, 3000);
+          loadStats();
+          loadImages();
+        }
+      });
+    }
+
+    document.getElementById('uploadArea').addEventListener('click', async () => {
+      if (!selectedCategory) {
+        alert('Primero selecciona una categoria');
+        return;
+      }
+      await initUploadWidget();
+      const widget = createUploadWidget();
+      if (widget) {
+        widget.open();
+      }
+    });
+
+    // Load stats from backend
+    async function loadStats() {
+      try {
+        const response = await fetch('/api/stats');
+        const data = await response.json();
+        if (data.success) {
+          document.getElementById('statTotal').textContent = data.stats.total || 0;
+          document.getElementById('statRaveXL').textContent = data.stats['rave-xl'] || 0;
+          document.getElementById('statRaveL').textContent = data.stats['rave-l'] || 0;
+          document.getElementById('statMedium').textContent = data.stats['medium'] || 0;
+        }
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    }
+
+    // Load images from backend
+    async function loadImages() {
+      const container = document.getElementById('uploadedImages');
+      const filter = document.getElementById('filterCategory').value;
+      container.innerHTML = '<div class="loading">Cargando imagenes...</div>';
+
+      try {
+        const response = await fetch(`/api/images?category=${filter}`);
+        const data = await response.json();
+
+        if (data.success && data.images.length > 0) {
+          allImages = data.images;
+          renderImages(allImages);
+        } else {
+          container.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No hay imagenes en esta categoria. Sube la primera!</p>';
+        }
+      } catch (error) {
+        console.error('Error loading images:', error);
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">Error cargando imagenes.</p>';
+      }
+    }
+
+    function renderImages(images) {
+      const container = document.getElementById('uploadedImages');
+
+      if (images.length === 0) {
+        container.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No hay imagenes en esta categoria.</p>';
+        return;
+      }
+
+      container.innerHTML = images.map(img => {
+        return `
+          <div class="uploaded-item">
+            <img src="${img.thumbnail}" alt="Abanico" loading="lazy">
+            <span class="badge">${img.category}</span>
+            <button class="delete-btn" onclick="deleteImage('${img.public_id}')" title="Eliminar">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Filter change
+    document.getElementById('filterCategory').addEventListener('change', () => {
+      loadImages();
+    });
+
+    // Delete image via backend
+    async function deleteImage(publicId) {
+      if (!confirm('Eliminar esta imagen?')) return;
+
+      try {
+        const response = await fetch(`/api/images/${encodeURIComponent(publicId)}`, {
+          method: 'DELETE'
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          loadStats();
+          loadImages();
+        } else {
+          alert('Error eliminando imagen: ' + data.error);
+        }
+      } catch (error) {
+        console.error('Error deleting image:', error);
+        alert('Error eliminando imagen');
+      }
+    }
+  </script>
+</body>
+</html>

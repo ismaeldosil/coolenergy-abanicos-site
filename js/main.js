@@ -243,6 +243,137 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // =====================================
+  // Load Cloudinary Images
+  // =====================================
+  async function loadCloudinaryImages() {
+    try {
+      const response = await fetch('/api/images?category=all');
+      const data = await response.json();
+
+      if (data.success && data.images.length > 0) {
+        const galleryGrid = document.getElementById('galleryGrid');
+
+        data.images.forEach(img => {
+          const card = createProductCard(img);
+          galleryGrid.appendChild(card);
+        });
+
+        // Re-attach filter listeners for new cards
+        attachFilterListeners();
+      }
+    } catch (error) {
+      console.log('No hay imagenes en Cloudinary todavia');
+    }
+  }
+
+  function createProductCard(img) {
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    card.dataset.category = img.category;
+    card.dataset.reveal = '';
+    card.dataset.cloudinary = 'true';
+
+    const categoryLabels = {
+      'rave-xl': 'RAVE XL',
+      'rave-l': 'RAVE L',
+      'medium': 'MEDIUM',
+      'personalizados': 'Personalizado'
+    };
+
+    const categorySizes = {
+      'rave-xl': '66cm',
+      'rave-l': '50cm',
+      'medium': '40cm',
+      'personalizados': 'XL o L'
+    };
+
+    card.innerHTML = `
+      <div class="product-image">
+        <img src="${img.full}" alt="Abanico" loading="lazy">
+        <div class="product-overlay">
+          <a href="https://wa.me/59895192300?text=Hola!%20Me%20interesa%20este%20abanico" class="btn btn-primary" target="_blank">
+            Consultar
+          </a>
+        </div>
+      </div>
+      <div class="product-info">
+        <h3>${categoryLabels[img.category] || 'Abanico'}</h3>
+        <p>Subido desde galeria</p>
+        <div class="product-meta">
+          <span class="product-size">${categorySizes[img.category] || ''}</span>
+        </div>
+      </div>
+    `;
+
+    // Add hover effects
+    card.addEventListener('mouseenter', () => {
+      card.style.transform = 'translateY(-8px)';
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+    });
+
+    // Trigger reveal animation
+    setTimeout(() => {
+      card.classList.add('revealed');
+    }, 100);
+
+    return card;
+  }
+
+  function attachFilterListeners() {
+    const filterBtns = document.querySelectorAll('.filter-btn');
+    const allProductCards = document.querySelectorAll('.product-card');
+
+    filterBtns.forEach(btn => {
+      btn.onclick = () => {
+        filterBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        const filter = btn.dataset.filter;
+
+        allProductCards.forEach(card => {
+          if (filter === 'all' || card.dataset.category === filter) {
+            card.style.display = '';
+            card.classList.add('revealed');
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      };
+    });
+
+    // Update modal to include cloudinary images
+    const categoryCards = document.querySelectorAll('.category-card');
+    categoryCards.forEach(card => {
+      card.onclick = () => {
+        const category = card.dataset.category;
+        if (!category) return;
+
+        const info = categoryInfo[category];
+        modalTitle.textContent = info.title;
+        modalSubtitle.textContent = info.subtitle;
+
+        const products = document.querySelectorAll(`.product-card[data-category="${category}"]`);
+
+        modalGrid.innerHTML = '';
+        products.forEach(product => {
+          const clone = product.cloneNode(true);
+          clone.style.display = '';
+          clone.classList.remove('revealed');
+          modalGrid.appendChild(clone);
+        });
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      };
+    });
+  }
+
+  // Load Cloudinary images on page load
+  loadCloudinaryImages();
+
+  // =====================================
   // Console Easter Egg
   // =====================================
   console.log('%c🌀 COOL ENERGY ABANICOS', 'font-size: 24px; color: #ff00ff; font-weight: bold;');
