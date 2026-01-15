@@ -223,13 +223,14 @@ img {
 
 /* === HERO SECTION === */
 .hero {
-  min-height: 50vh;
+  min-height: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: var(--spacing-lg) var(--spacing-md);
-  padding-top: calc(var(--spacing-lg) + 80px);
+  padding: var(--spacing-md) var(--spacing-md);
+  padding-top: calc(var(--spacing-md) + 100px);
+  padding-bottom: var(--spacing-lg);
   background: var(--gradient-hero);
   position: relative;
   overflow: hidden;
@@ -1094,13 +1095,6 @@ img {
 /* === TEXT REVEAL ANIMATIONS === */
 [data-text-reveal] .char {
   display: inline-block;
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-[data-text-reveal].revealed .char {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 /* Character hover color cycling */
@@ -1164,26 +1158,7 @@ section::before {
 }
 
 /* === EXTRA ANIMATIONS === */
-.category-card {
-  animation: floatIn 0.6s ease forwards;
-  opacity: 0;
-}
-
-.category-card:nth-child(1) { animation-delay: 0.1s; }
-.category-card:nth-child(2) { animation-delay: 0.2s; }
-.category-card:nth-child(3) { animation-delay: 0.3s; }
-.category-card:nth-child(4) { animation-delay: 0.4s; }
-
-@keyframes floatIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
+/* GSAP handles category-card animations */
 
 .product-card {
   transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),

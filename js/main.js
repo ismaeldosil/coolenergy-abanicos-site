@@ -13,41 +13,43 @@ document.addEventListener('DOMContentLoaded', () => {
   const textRevealElements = document.querySelectorAll('[data-text-reveal]');
 
   textRevealElements.forEach(element => {
-    // Split text into characters
-    const text = element.innerHTML;
-    const words = text.split(/(\s+)/);
+    // Split text into characters, preserving HTML tags
+    const html = element.innerHTML;
 
-    element.innerHTML = words.map(word => {
-      if (word.match(/^\s+$/)) return word; // Keep whitespace
-      if (word.includes('<')) return word; // Keep HTML tags
-      return word.split('').map(char =>
-        `<span class="char">${char}</span>`
-      ).join('');
-    }).join('');
+    // Simple split - just wrap visible characters
+    let result = '';
+    let inTag = false;
+
+    for (let i = 0; i < html.length; i++) {
+      const char = html[i];
+      if (char === '<') inTag = true;
+      if (inTag) {
+        result += char;
+        if (char === '>') inTag = false;
+      } else if (char === ' ' || char === '\n') {
+        result += char;
+      } else {
+        result += `<span class="char">${char}</span>`;
+      }
+    }
+
+    element.innerHTML = result;
 
     // Animate with GSAP
     const chars = element.querySelectorAll('.char');
 
-    gsap.fromTo(chars,
-      {
-        opacity: 0,
-        y: 30,
-        rotateX: -90
-      },
-      {
-        opacity: 1,
-        y: 0,
-        rotateX: 0,
-        duration: 0.6,
-        ease: "expo.out",
-        stagger: 0.02,
-        scrollTrigger: {
-          trigger: element,
-          start: "top 85%",
-          toggleActions: "play none none none"
-        }
-      }
-    );
+    // Set visible first
+    gsap.set(chars, { opacity: 1, y: 0 });
+
+    // Then animate
+    gsap.from(chars, {
+      opacity: 0,
+      y: 20,
+      duration: 0.4,
+      ease: "expo.out",
+      stagger: 0.015,
+      delay: 0.3
+    });
   });
 
   // =====================================
@@ -83,29 +85,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const items = document.querySelectorAll(selector);
     if (items.length === 0) return;
 
-    gsap.fromTo(items,
-      {
-        opacity: 0,
-        y: 50,
-        scale: 0.95
-      },
-      {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.8,
-        ease: "expo.out",
-        stagger: {
-          amount: 0.4,
-          from: "start"
-        },
-        scrollTrigger: {
-          trigger: items[0].parentElement,
-          start: "top 80%",
-          toggleActions: "play none none none"
-        }
+    // Set initial state
+    gsap.set(items, { opacity: 1, y: 0, scale: 1 });
+
+    // Animate on scroll
+    gsap.from(items, {
+      opacity: 0,
+      y: 40,
+      scale: 0.95,
+      duration: 0.6,
+      ease: "expo.out",
+      stagger: 0.1,
+      scrollTrigger: {
+        trigger: items[0].parentElement,
+        start: "top 85%",
+        toggleActions: "play none none none"
       }
-    );
+    });
   });
 
   // =====================================
@@ -118,35 +114,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const title = header.querySelector('.section-title');
     const subtitle = header.querySelector('.section-subtitle');
 
+    // Ensure visible by default
+    gsap.set([tag, title, subtitle].filter(Boolean), { opacity: 1, y: 0 });
+
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: header,
-        start: "top 85%",
+        start: "top 90%",
         toggleActions: "play none none none"
       }
     });
 
     if (tag) {
-      tl.fromTo(tag,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" }
-      );
+      tl.from(tag, { opacity: 0, y: 15, duration: 0.4, ease: "expo.out" });
     }
 
     if (title) {
-      tl.fromTo(title,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" },
-        "-=0.3"
-      );
+      tl.from(title, { opacity: 0, y: 20, duration: 0.5, ease: "expo.out" }, "-=0.2");
     }
 
     if (subtitle) {
-      tl.fromTo(subtitle,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "expo.out" },
-        "-=0.3"
-      );
+      tl.from(subtitle, { opacity: 0, y: 15, duration: 0.4, ease: "expo.out" }, "-=0.2");
     }
   });
 
@@ -159,29 +147,22 @@ document.addEventListener('DOMContentLoaded', () => {
   const heroCta = document.querySelector('.hero-cta');
 
   if (heroContent) {
-    const heroTl = gsap.timeline({ delay: 0.3 });
+    // Ensure visible
+    gsap.set([heroBadge, heroTagline, heroCta].filter(Boolean), { opacity: 1, y: 0 });
+    if (heroCta) gsap.set(heroCta.children, { opacity: 1, y: 0 });
+
+    const heroTl = gsap.timeline({ delay: 0.2 });
 
     if (heroBadge) {
-      heroTl.fromTo(heroBadge,
-        { opacity: 0, y: -20, scale: 0.8 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "back.out(1.7)" }
-      );
+      heroTl.from(heroBadge, { opacity: 0, y: -15, scale: 0.9, duration: 0.5, ease: "back.out(1.7)" });
     }
 
     if (heroTagline) {
-      heroTl.fromTo(heroTagline,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" },
-        "-=0.2"
-      );
+      heroTl.from(heroTagline, { opacity: 0, y: 15, duration: 0.5, ease: "expo.out" }, "-=0.2");
     }
 
     if (heroCta) {
-      heroTl.fromTo(heroCta.children,
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.5, ease: "expo.out", stagger: 0.1 },
-        "-=0.3"
-      );
+      heroTl.from(heroCta.children, { opacity: 0, y: 15, duration: 0.4, ease: "expo.out", stagger: 0.1 }, "-=0.2");
     }
   }
 
