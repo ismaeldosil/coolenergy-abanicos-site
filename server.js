@@ -232,12 +232,14 @@ app.get('/api/images', requireCloudinary, async (req, res) => {
         height: 300,
         crop: 'fill',
         quality: 'auto',
-        format: 'auto'
+        fetch_format: 'auto',
+        secure: true
       }),
       full: cloudinary.url(img.public_id, {
         width: 800,
         quality: 'auto',
-        format: 'auto'
+        fetch_format: 'auto',
+        secure: true
       }),
       category: extractCategory(img.public_id),
       created_at: img.created_at
