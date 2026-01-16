@@ -115,7 +115,7 @@ git push
 ```json
 {
   "enabled": true,
-  "githubRepo": "ismaeldosil/coolenergy-abanicos-site",
+  "githubRepo": "mogara17/coolenergy-abanicos-site",
   "branch": "main",
   "basePath": "images/fallback",
   "images": [...]
@@ -155,7 +155,7 @@ git push
 
 ```bash
 # Verificar que las imagenes estan accesibles
-curl https://raw.githubusercontent.com/ismaeldosil/coolenergy-abanicos-site/main/images/fallback/rave-xl/abanico-001.jpg -I
+curl https://raw.githubusercontent.com/mogara17/coolenergy-abanicos-site/main/images/fallback/rave-xl/abanico-001.jpg -I
 ```
 
 ### En el sitio

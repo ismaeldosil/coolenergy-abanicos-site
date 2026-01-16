@@ -1,7 +1,7 @@
 {
   "enabled": true,
   "description": "Imagenes de respaldo cuando Cloudinary no esta disponible",
-  "githubRepo": "ismaeldosil/coolenergy-abanicos-site",
+  "githubRepo": "mogara17/coolenergy-abanicos-site",
   "branch": "main",
   "basePath": "images/fallback",
   "instructions": {
