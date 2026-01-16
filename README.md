@@ -6,7 +6,7 @@ Sitio web institucional y sistema de gestion para Cool Energy Abanicos - Abanico
 
 ### Sitio Web
 - **Galeria Dinamica** - Imagenes cargadas desde Cloudinary CDN con optimizacion automatica
-- **Sistema de Fallback** - Si Cloudinary falla, las imagenes se cargan desde GitHub automaticamente
+- **Sistema de Fallback** - Si Cloudinary falla, las imagenes se cargan desde GitHub automaticamente ([ver documentacion](docs/FALLBACK.md))
 - **Modal de Categorias** - Vista expandida de productos por categoria con animaciones
 - **Animaciones CSS** - Efectos de entrada/salida en galeria, hover effects, transiciones fluidas
 - **Diseño Responsive** - Optimizado para mobile, tablet y desktop
@@ -74,19 +74,29 @@ graph TB
 
 ```
 site/
-├── config.js          # Configuracion centralizada
-├── server.js          # Servidor Express
-├── index.html         # Pagina principal
-├── admin.html         # Panel de administracion
+├── config.js              # Configuracion centralizada
+├── server.js              # Servidor Express
+├── fallback-images.json   # Configuracion de imagenes de respaldo
+├── index.html             # Pagina principal
+├── admin.html             # Panel de administracion
 ├── css/
-│   └── styles.css     # Estilos del sitio
+│   └── styles.css         # Estilos del sitio
 ├── js/
-│   └── main.js        # JavaScript principal
-└── images/
-    ├── logo.png
-    ├── favicon.png
-    ├── hero-bg.png
-    └── ...
+│   └── main.js            # JavaScript principal
+├── images/
+│   ├── fallback/          # Imagenes de respaldo por categoria
+│   │   ├── rave-xl/
+│   │   ├── rave-l/
+│   │   ├── medium/
+│   │   └── personalizados/
+│   ├── logo.png
+│   ├── favicon.png
+│   └── hero-bg.png
+└── docs/
+    ├── API-Reference.md
+    ├── SETUP_TUTORIAL.md
+    ├── ADMIN_TUTORIAL.md
+    └── FALLBACK.md
 ```
 
 ## Inicio Rapido
@@ -142,6 +152,7 @@ Todas las configuraciones estan centralizadas en `config.js`. Para modificar val
 | [API Reference](docs/API-Reference.md) | Documentacion completa de endpoints |
 | [Setup Tutorial](docs/SETUP_TUTORIAL.md) | Guia de configuracion de servicios |
 | [Admin Tutorial](docs/ADMIN_TUTORIAL.md) | Tutorial del panel de administracion |
+| [Fallback System](docs/FALLBACK.md) | Como agregar imagenes de respaldo |
 | [Usage Guide](USAGE.md) | Guia de uso general |
 
 ## Deploy en Railway
