@@ -389,6 +389,41 @@
       opacity: 1;
     }
 
+    /* Gallery Animations */
+    @keyframes adminItemEnter {
+      0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(15px);
+      }
+      60% {
+        transform: scale(1.03) translateY(-3px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes adminItemExit {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.7) translateY(-15px);
+      }
+    }
+
+    .uploaded-item.item-enter {
+      animation: adminItemEnter 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .uploaded-item.item-exit {
+      animation: adminItemExit 0.25s ease-out forwards;
+      pointer-events: none;
+    }
+
     .loading {
       text-align: center;
       padding: 2rem;
@@ -803,8 +838,18 @@
           return;
         }
 
-        this.elements.uploadedImages.innerHTML = images.map(img => `
-          <div class="uploaded-item">
+        // Clear container
+        this.elements.uploadedImages.innerHTML = '';
+
+        // Create and append items with staggered animation
+        images.forEach((img, index) => {
+          const item = document.createElement('div');
+          item.className = 'uploaded-item item-enter';
+          item.dataset.publicId = img.public_id;
+          item.style.opacity = '0';
+          item.style.animationDelay = `${index * 40}ms`;
+
+          item.innerHTML = `
             <img src="${this.escapeHtml(img.thumbnail)}" alt="Abanico ${this.escapeHtml(img.category)}" loading="lazy">
             <span class="badge">${this.escapeHtml(img.category)}</span>
             <button class="delete-btn" onclick="App.deleteImage('${this.escapeHtml(img.public_id)}')" title="Eliminar" aria-label="Eliminar imagen">
@@ -812,8 +857,20 @@
                 <path d="M18 6L6 18M6 6l12 12"/>
               </svg>
             </button>
-          </div>
-        `).join('');
+          `;
+
+          this.elements.uploadedImages.appendChild(item);
+
+          // Trigger animation
+          requestAnimationFrame(() => {
+            item.style.opacity = '';
+          });
+
+          // Remove animation class after completion
+          item.addEventListener('animationend', () => {
+            item.classList.remove('item-enter');
+          }, { once: true });
+        });
       },
 
       escapeHtml(text) {
@@ -1140,16 +1197,43 @@
       async deleteImage(publicId) {
         if (!confirm('Eliminar esta imagen?')) return;
 
+        // Find and animate the item out
+        const item = document.querySelector(`.uploaded-item[data-public-id="${publicId}"]`);
+        if (item) {
+          item.classList.add('item-exit');
+        }
+
         try {
           const result = await ApiService.deleteImage(publicId);
 
           if (result.success) {
-            this.loadStats();
-            this.loadImages();
+            // Wait for exit animation to complete
+            if (item) {
+              item.addEventListener('animationend', () => {
+                item.remove();
+                this.loadStats();
+                // Only reload if there are items left or container is empty
+                const remaining = document.querySelectorAll('.uploaded-item').length;
+                if (remaining === 0) {
+                  this.loadImages();
+                }
+              }, { once: true });
+            } else {
+              this.loadStats();
+              this.loadImages();
+            }
           } else {
+            // Remove exit animation if delete failed
+            if (item) {
+              item.classList.remove('item-exit');
+            }
             alert('Error eliminando imagen: ' + result.error);
           }
         } catch (error) {
+          // Remove exit animation on error
+          if (item) {
+            item.classList.remove('item-exit');
+          }
           console.error('Error deleting image:', error);
           alert('Error eliminando imagen');
         }

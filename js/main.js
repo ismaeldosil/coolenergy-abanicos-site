@@ -260,9 +260,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear any existing content
         galleryGrid.innerHTML = '';
 
-        // Add all images from Cloudinary
-        data.images.forEach(img => {
-          const card = createProductCard(img);
+        // Add all images from Cloudinary with staggered animation
+        data.images.forEach((img, index) => {
+          const card = createProductCard(img, index);
           galleryGrid.appendChild(card);
         });
 
@@ -294,12 +294,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function createProductCard(img) {
+  function createProductCard(img, index = 0) {
     const card = document.createElement('div');
-    card.className = 'product-card';
+    card.className = 'product-card gallery-item-enter';
     card.dataset.category = img.category;
-    card.dataset.reveal = '';
     card.dataset.cloudinary = 'true';
+    card.style.opacity = '0'; // Start invisible for animation
 
     const categoryLabels = {
       'rave-xl': 'RAVE XL',
@@ -333,18 +333,28 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
     `;
 
-    // Add hover effects
+    // Add hover effects (only when not animating)
     card.addEventListener('mouseenter', () => {
-      card.style.transform = 'translateY(-8px)';
+      if (!card.classList.contains('gallery-item-enter')) {
+        card.style.transform = 'translateY(-8px)';
+      }
     });
     card.addEventListener('mouseleave', () => {
-      card.style.transform = '';
+      if (!card.classList.contains('gallery-item-enter')) {
+        card.style.transform = '';
+      }
     });
 
-    // Trigger reveal animation
+    // Trigger enter animation with stagger
     setTimeout(() => {
-      card.classList.add('revealed');
-    }, 100);
+      card.style.opacity = '';
+      card.style.animationDelay = `${index * 50}ms`;
+    }, 10);
+
+    // Remove animation class after animation completes
+    card.addEventListener('animationend', () => {
+      card.classList.remove('gallery-item-enter');
+    }, { once: true });
 
     return card;
   }
