@@ -1156,7 +1156,9 @@ img {
 
 .modal-content {
   position: relative;
-  background: var(--bg-secondary);
+  background:
+    linear-gradient(to bottom, rgba(10, 10, 10, 0.92), rgba(10, 10, 10, 0.98)),
+    url('../images/hero-bg.png') center center / cover no-repeat;
   border-radius: var(--radius-lg);
   max-width: 900px;
   width: 100%;
