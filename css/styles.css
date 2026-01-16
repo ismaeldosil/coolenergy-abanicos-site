@@ -496,18 +496,20 @@ img {
 }
 
 .category-card {
-  background: var(--bg-card);
+  background:
+    linear-gradient(to bottom, rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.95)),
+    url('../images/hero-bg.png') center center / cover no-repeat;
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
   text-align: center;
   transition: var(--transition-base);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
   overflow: hidden;
   cursor: pointer;
 }
 
-
+/* Neon glow line on top */
 .category-card::before {
   content: '';
   position: absolute;
@@ -520,9 +522,31 @@ img {
   transition: var(--transition-base);
 }
 
+/* Subtle neon corner accents */
+.category-card .category-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(ellipse at top left, rgba(255, 0, 255, 0.1), transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(0, 255, 255, 0.1), transparent 50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
 .category-card:hover {
   transform: translateY(-5px);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  background:
+    linear-gradient(to bottom, rgba(10, 10, 10, 0.75), rgba(10, 10, 10, 0.9)),
+    url('../images/hero-bg.png') center center / cover no-repeat;
+}
+
+.category-card:hover .category-glow {
+  opacity: 1;
 }
 
 .category-card:hover::before {

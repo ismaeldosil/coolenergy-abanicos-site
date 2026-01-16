@@ -8,11 +8,14 @@ const { body, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
+// Cargar configuracion centralizada
+const config = require('./config');
+
 const app = express();
 
 // Security: Helmet for HTTP headers (relaxed CSP for Cloudinary)
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable CSP to allow Cloudinary images
+  contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
@@ -20,81 +23,98 @@ app.use(helmet({
 // Performance: Compression
 app.use(compression());
 
-// Security: Rate limiting
+// Security: Rate limiting (usando config)
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: { error: 'Demasiadas solicitudes, intenta de nuevo mas tarde' },
+  windowMs: config.rateLimiting.api.windowMs,
+  max: config.rateLimiting.api.max,
+  message: config.rateLimiting.api.message,
   standardHeaders: true,
   legacyHeaders: false
 });
 
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5, // Only 5 login attempts per 15 minutes
-  message: { error: 'Demasiados intentos de login, intenta de nuevo en 15 minutos' }
+  windowMs: config.rateLimiting.auth.windowMs,
+  max: config.rateLimiting.auth.max,
+  message: config.rateLimiting.auth.message
 });
 
 app.use('/api/', apiLimiter);
 app.use('/api/auth/', authLimiter);
 
-app.use(express.json({ limit: '10kb' })); // Limit body size
+app.use(express.json({ limit: '10kb' }));
 
-// Environment variables with NO fallbacks for credentials
-const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
-const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY;
-const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET;
-const JWT_SECRET = process.env.JWT_SECRET || 'coolenergy-jwt-secret-change-in-production';
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '$2a$10$PTR6g/3ECD7XzMZNHXA8seyzMl9OHW1P9RPfHhaJUu8lQxJpR.NxS'; // Default: coolenergy2024
-
-// Cloudinary config - only configure if credentials exist
-if (CLOUDINARY_CLOUD_NAME && CLOUDINARY_API_KEY && CLOUDINARY_API_SECRET) {
+// Cloudinary config (usando config)
+if (config.cloudinary.cloudName && config.cloudinary.apiKey && config.cloudinary.apiSecret) {
   cloudinary.config({
-    cloud_name: CLOUDINARY_CLOUD_NAME,
-    api_key: CLOUDINARY_API_KEY,
-    api_secret: CLOUDINARY_API_SECRET
+    cloud_name: config.cloudinary.cloudName,
+    api_key: config.cloudinary.apiKey,
+    api_secret: config.cloudinary.apiSecret
   });
 } else {
-  console.warn('WARNING: Cloudinary credentials not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.');
+  console.warn('WARNING: Cloudinary credentials not configured. Set environment variables.');
 }
 
-// Health check endpoint for Railway
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+// Health check endpoint
+app.get(config.server.healthPath, (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    site: config.site.name
+  });
+});
+
+// API: Site config (public - para el frontend)
+app.get('/api/config', (req, res) => {
+  res.json({
+    success: true,
+    config: {
+      site: {
+        name: config.site.name,
+        url: config.site.url,
+        description: config.site.description
+      },
+      contact: config.contact,
+      categories: config.categories,
+      analytics: {
+        enabled: config.analytics.enabled,
+        endpoints: config.analytics.endpoints
+      }
+    }
+  });
 });
 
 // Performance: Static files with caching headers
 app.use(express.static(path.join(__dirname), {
-  maxAge: '1d', // Cache for 1 day
+  maxAge: config.cache.staticFiles,
   etag: true,
   lastModified: true,
   setHeaders: (res, filePath) => {
-    // Longer cache for images and fonts
     if (filePath.match(/\.(jpg|jpeg|png|gif|webp|svg|woff|woff2|ttf)$/)) {
-      res.setHeader('Cache-Control', 'public, max-age=604800'); // 7 days
+      res.setHeader('Cache-Control', `public, max-age=${7 * 24 * 60 * 60}`);
     }
-    // Shorter cache for CSS/JS (might change more often)
     if (filePath.match(/\.(css|js)$/)) {
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // 1 day
+      res.setHeader('Cache-Control', `public, max-age=${24 * 60 * 60}`);
     }
   }
 }));
 
 // ================== ANALYTICS ==================
 
-// Simple in-memory analytics (for demo - use a DB in production)
 const analytics = {
   pageviews: {},
   events: [],
   sessions: new Set()
 };
 
-// Analytics: Track pageview
-app.post('/api/analytics/pageview', [
+app.post(config.analytics.endpoints.pageview, [
   body('page').isString().trim().escape().isLength({ max: 200 }),
   body('referrer').optional().isString().trim().escape().isLength({ max: 500 }),
   body('sessionId').optional().isString().trim().isLength({ max: 50 })
 ], (req, res) => {
+  if (!config.analytics.enabled) {
+    return res.json({ success: true, message: 'Analytics disabled' });
+  }
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ success: false, errors: errors.array() });
@@ -118,11 +138,14 @@ app.post('/api/analytics/pageview', [
   res.json({ success: true });
 });
 
-// Analytics: Track event (clicks, etc)
-app.post('/api/analytics/event', [
+app.post(config.analytics.endpoints.event, [
   body('event').isString().trim().escape().isLength({ max: 100 }),
   body('data').optional().isObject()
 ], (req, res) => {
+  if (!config.analytics.enabled) {
+    return res.json({ success: true, message: 'Analytics disabled' });
+  }
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ success: false, errors: errors.array() });
@@ -135,9 +158,8 @@ app.post('/api/analytics/event', [
     timestamp: new Date().toISOString()
   });
 
-  // Keep only last 1000 events
-  if (analytics.events.length > 1000) {
-    analytics.events = analytics.events.slice(-1000);
+  if (analytics.events.length > config.analytics.maxEvents) {
+    analytics.events = analytics.events.slice(-config.analytics.maxEvents);
   }
 
   res.json({ success: true });
@@ -145,7 +167,6 @@ app.post('/api/analytics/event', [
 
 // ================== AUTHENTICATION ==================
 
-// Auth: Login endpoint
 app.post('/api/auth/login', [
   body('password').isString().isLength({ min: 1, max: 100 })
 ], async (req, res) => {
@@ -157,10 +178,12 @@ app.post('/api/auth/login', [
   const { password } = req.body;
 
   try {
-    const isValid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    const isValid = await bcrypt.compare(password, config.auth.adminPasswordHash);
 
     if (isValid) {
-      const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '24h' });
+      const token = jwt.sign({ role: 'admin' }, config.auth.jwtSecret, {
+        expiresIn: config.auth.jwtExpiresIn
+      });
       res.json({ success: true, token });
     } else {
       res.status(401).json({ success: false, error: 'Password incorrecto' });
@@ -171,7 +194,6 @@ app.post('/api/auth/login', [
   }
 });
 
-// Auth middleware
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -180,7 +202,7 @@ function authenticateToken(req, res, next) {
     return res.status(401).json({ success: false, error: 'Token requerido' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, config.auth.jwtSecret, (err, user) => {
     if (err) {
       return res.status(403).json({ success: false, error: 'Token invalido o expirado' });
     }
@@ -189,11 +211,10 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// ================== CLOUDINARY API (Protected) ==================
+// ================== CLOUDINARY API ==================
 
-// Check if Cloudinary is configured
 function requireCloudinary(req, res, next) {
-  if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_API_KEY || !CLOUDINARY_API_SECRET) {
+  if (!config.cloudinary.cloudName || !config.cloudinary.apiKey || !config.cloudinary.apiSecret) {
     return res.status(503).json({
       success: false,
       error: 'Cloudinary no configurado. Configura las variables de entorno.'
@@ -202,24 +223,21 @@ function requireCloudinary(req, res, next) {
   next();
 }
 
-// API: List images (public for gallery)
 app.get('/api/images', requireCloudinary, async (req, res) => {
   try {
     const { category } = req.query;
 
     let options = {
       type: 'upload',
-      prefix: 'coolenergy/abanicos',
+      prefix: config.cloudinary.baseFolder,
       max_results: 500
     };
 
     if (category && category !== 'all') {
-      // Sanitize category input
-      const allowedCategories = ['rave-xl', 'rave-l', 'medium', 'personalizados'];
-      if (!allowedCategories.includes(category)) {
+      if (!config.categories.list.includes(category)) {
         return res.status(400).json({ success: false, error: 'Categoria invalida' });
       }
-      options.prefix = `coolenergy/abanicos/${category}`;
+      options.prefix = `${config.cloudinary.baseFolder}/${category}`;
     }
 
     const result = await cloudinary.api.resources(options);
@@ -228,15 +246,15 @@ app.get('/api/images', requireCloudinary, async (req, res) => {
       public_id: img.public_id,
       url: img.secure_url,
       thumbnail: cloudinary.url(img.public_id, {
-        width: 300,
-        height: 300,
+        width: config.cloudinary.thumbnailSize.width,
+        height: config.cloudinary.thumbnailSize.height,
         crop: 'fill',
         quality: 'auto',
         fetch_format: 'auto',
         secure: true
       }),
       full: cloudinary.url(img.public_id, {
-        width: 800,
+        width: config.cloudinary.fullSize.width,
         quality: 'auto',
         fetch_format: 'auto',
         secure: true
@@ -252,9 +270,8 @@ app.get('/api/images', requireCloudinary, async (req, res) => {
   }
 });
 
-// API: Upload signature (Protected - requires auth)
 app.post('/api/upload/signature', authenticateToken, requireCloudinary, [
-  body('category').isString().isIn(['rave-xl', 'rave-l', 'medium', 'personalizados'])
+  body('category').isString().isIn(config.categories.list)
 ], (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -263,29 +280,27 @@ app.post('/api/upload/signature', authenticateToken, requireCloudinary, [
 
   const { category } = req.body;
   const timestamp = Math.round(new Date().getTime() / 1000);
-  const folder = `coolenergy/abanicos/${category}`;
+  const folder = `${config.cloudinary.baseFolder}/${category}`;
 
   const signature = cloudinary.utils.api_sign_request(
     { timestamp, folder },
-    CLOUDINARY_API_SECRET
+    config.cloudinary.apiSecret
   );
 
   res.json({
     signature,
     timestamp,
     folder,
-    api_key: CLOUDINARY_API_KEY,
-    cloud_name: CLOUDINARY_CLOUD_NAME
+    api_key: config.cloudinary.apiKey,
+    cloud_name: config.cloudinary.cloudName
   });
 });
 
-// API: Delete image (Protected - requires auth)
 app.delete('/api/images/:publicId(*)', authenticateToken, requireCloudinary, async (req, res) => {
   try {
     const publicId = req.params.publicId;
 
-    // Validate publicId format
-    if (!publicId.startsWith('coolenergy/abanicos/')) {
+    if (!publicId.startsWith(config.cloudinary.baseFolder + '/')) {
       return res.status(400).json({ success: false, error: 'ID de imagen invalido' });
     }
 
@@ -302,17 +317,15 @@ app.delete('/api/images/:publicId(*)', authenticateToken, requireCloudinary, asy
   }
 });
 
-// API: Get stats (Protected - requires auth)
 app.get('/api/stats', authenticateToken, requireCloudinary, async (req, res) => {
   try {
-    const categories = ['rave-xl', 'rave-l', 'medium', 'personalizados'];
     const stats = { total: 0 };
 
-    for (const cat of categories) {
+    for (const cat of config.categories.list) {
       try {
         const result = await cloudinary.api.resources({
           type: 'upload',
-          prefix: `coolenergy/abanicos/${cat}`,
+          prefix: `${config.cloudinary.baseFolder}/${cat}`,
           max_results: 500
         });
         stats[cat] = result.resources.length;
@@ -329,7 +342,6 @@ app.get('/api/stats', authenticateToken, requireCloudinary, async (req, res) => 
   }
 });
 
-// API: Get analytics (Protected - requires auth)
 app.get('/api/analytics', authenticateToken, (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const todayViews = analytics.pageviews[today] || {};
@@ -348,31 +360,31 @@ app.get('/api/analytics', authenticateToken, (req, res) => {
   });
 });
 
-// Helper: Extract category from public_id
 function extractCategory(publicId) {
   const parts = publicId.split('/');
   if (parts.length >= 3) {
-    return parts[2]; // coolenergy/abanicos/CATEGORY/filename
+    return parts[2];
   }
   return 'sin-categoria';
 }
 
-// Admin route (without .html)
-app.get('/admin', (req, res) => {
+// Admin route (usando config.server.adminPath)
+app.get(config.server.adminPath, (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
 // Fallback to index.html for SPA
 app.get('*', (req, res) => {
-  // Don't redirect API calls
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'Not found' });
   }
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = config.server.port;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Cloudinary configured: ${!!CLOUDINARY_CLOUD_NAME}`);
+  console.log(`Admin panel: ${config.server.adminPath}`);
+  console.log(`Cloudinary configured: ${!!config.cloudinary.cloudName}`);
+  console.log(`Site URL: ${config.site.url}`);
 });
