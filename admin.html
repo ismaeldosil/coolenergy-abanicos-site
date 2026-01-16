@@ -185,6 +185,21 @@
       background: rgba(255, 0, 255, 0.05);
     }
 
+    .upload-area.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .upload-area.disabled:hover {
+      border-color: rgba(255,255,255,0.2);
+      background: transparent;
+    }
+
+    .upload-area.has-file {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 255, 255, 0.05);
+    }
+
     .upload-area svg {
       width: 48px;
       height: 48px;
@@ -194,6 +209,93 @@
 
     .upload-area p {
       color: var(--text-secondary);
+    }
+
+    /* Image Preview */
+    .image-preview {
+      display: none;
+      margin-top: 1rem;
+      position: relative;
+    }
+
+    .image-preview.active {
+      display: block;
+    }
+
+    .image-preview img {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+
+    .image-preview .remove-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 20, 147, 0.9);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .image-preview .file-name {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Progress Bar */
+    .progress-container {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    .progress-container.active {
+      display: block;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-secondary);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--gradient-neon);
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    /* Upload Button */
+    .upload-btn {
+      margin-top: 1rem;
+    }
+
+    .upload-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .upload-btn:disabled:hover {
+      box-shadow: none;
     }
 
     .category-select {
@@ -483,19 +585,39 @@
           </div>
         </div>
 
-        <label>2. Sube la imagen:</label>
-        <div class="upload-area" id="uploadArea">
+        <label>2. Selecciona la imagen:</label>
+        <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
+        <div class="upload-area disabled" id="uploadArea">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
             <polyline points="17 8 12 3 7 8"/>
             <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
-          <p>Selecciona una categoria primero</p>
+          <p id="uploadAreaText">Primero selecciona una categoria</p>
           <p><small>JPG, PNG, WEBP - Max 10MB</small></p>
         </div>
 
-        <button class="btn upload-btn" id="uploadBtn" style="display: none; margin-top: 1rem;">
-          Subir imagen a Cloudinary
+        <!-- Image Preview -->
+        <div class="image-preview" id="imagePreview">
+          <img id="previewImg" src="" alt="Preview">
+          <button class="remove-btn" id="removeBtn" title="Quitar imagen">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+          <p class="file-name" id="fileName"></p>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container" id="progressContainer">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <p class="progress-text" id="progressText">Subiendo... 0%</p>
+        </div>
+
+        <button class="btn upload-btn" id="uploadBtn" disabled>
+          Subir a Cloudinary
         </button>
 
         <div id="successMsg" class="success-msg" style="display: none;">
@@ -522,9 +644,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Cloudinary Widget -->
-  <script src="https://upload-widget.cloudinary.com/global/all.js"></script>
 
   <script>
     // ================== Auth Service ==================
@@ -626,11 +745,21 @@
         uploadedImages: document.getElementById('uploadedImages'),
         filterCategory: document.getElementById('filterCategory'),
         uploadArea: document.getElementById('uploadArea'),
+        uploadAreaText: document.getElementById('uploadAreaText'),
+        fileInput: document.getElementById('fileInput'),
+        imagePreview: document.getElementById('imagePreview'),
+        previewImg: document.getElementById('previewImg'),
+        removeBtn: document.getElementById('removeBtn'),
+        fileName: document.getElementById('fileName'),
+        progressContainer: document.getElementById('progressContainer'),
+        progressFill: document.getElementById('progressFill'),
+        progressText: document.getElementById('progressText'),
+        uploadBtn: document.getElementById('uploadBtn'),
         successMsg: document.getElementById('successMsg')
       },
 
       selectedCategory: null,
-      cloudConfig: null,
+      selectedFile: null,
 
       showError(message) {
         this.elements.loginError.textContent = message;
@@ -698,6 +827,69 @@
         setTimeout(() => {
           this.elements.successMsg.style.display = 'none';
         }, 3000);
+      },
+
+      // Enable upload area after category selection
+      enableUploadArea(categoryName) {
+        this.elements.uploadArea.classList.remove('disabled');
+        this.elements.uploadAreaText.textContent = `Click para seleccionar imagen (${categoryName})`;
+      },
+
+      // Show image preview
+      showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.elements.previewImg.src = e.target.result;
+          this.elements.fileName.textContent = file.name;
+          this.elements.imagePreview.classList.add('active');
+          this.elements.uploadArea.classList.add('has-file');
+        };
+        reader.readAsDataURL(file);
+      },
+
+      // Clear image preview
+      clearPreview() {
+        this.elements.previewImg.src = '';
+        this.elements.fileName.textContent = '';
+        this.elements.imagePreview.classList.remove('active');
+        this.elements.uploadArea.classList.remove('has-file');
+        this.elements.fileInput.value = '';
+        this.selectedFile = null;
+        this.updateUploadButton();
+      },
+
+      // Update upload button state
+      updateUploadButton() {
+        const canUpload = this.selectedCategory && this.selectedFile;
+        this.elements.uploadBtn.disabled = !canUpload;
+      },
+
+      // Show progress bar
+      showProgress() {
+        this.elements.progressContainer.classList.add('active');
+        this.elements.uploadBtn.disabled = true;
+        this.elements.uploadBtn.textContent = 'Subiendo...';
+      },
+
+      // Update progress
+      updateProgress(percent) {
+        this.elements.progressFill.style.width = `${percent}%`;
+        this.elements.progressText.textContent = `Subiendo... ${Math.round(percent)}%`;
+      },
+
+      // Hide progress bar
+      hideProgress() {
+        this.elements.progressContainer.classList.remove('active');
+        this.elements.progressFill.style.width = '0%';
+        this.elements.progressText.textContent = 'Subiendo... 0%';
+        this.elements.uploadBtn.textContent = 'Subir a Cloudinary';
+        this.updateUploadButton();
+      },
+
+      // Reset upload form
+      resetUploadForm() {
+        this.clearPreview();
+        this.hideProgress();
       }
     };
 
@@ -715,18 +907,62 @@
       },
 
       bindEvents() {
+        // Login form
         UIController.elements.loginForm.addEventListener('submit', (e) => this.handleLogin(e));
-        UIController.elements.filterCategory.addEventListener('change', () => this.loadImages());
 
-        // Upload button (new - replaces click on upload area)
-        const uploadBtn = document.getElementById('uploadBtn');
-        if (uploadBtn) {
-          uploadBtn.addEventListener('click', () => this.handleUpload());
-        }
+        // Filter change
+        UIController.elements.filterCategory.addEventListener('change', () => this.loadImages());
 
         // Category selection
         document.querySelectorAll('.category-option').forEach(option => {
           option.addEventListener('click', () => this.selectCategory(option));
+        });
+
+        // Upload area click -> trigger file input
+        UIController.elements.uploadArea.addEventListener('click', () => {
+          if (!UIController.elements.uploadArea.classList.contains('disabled')) {
+            UIController.elements.fileInput.click();
+          }
+        });
+
+        // File input change -> show preview
+        UIController.elements.fileInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            this.handleFileSelect(file);
+          }
+        });
+
+        // Remove button -> clear preview
+        UIController.elements.removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          UIController.clearPreview();
+        });
+
+        // Upload button -> upload to Cloudinary
+        UIController.elements.uploadBtn.addEventListener('click', () => this.handleUpload());
+
+        // Drag and drop support
+        UIController.elements.uploadArea.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          if (!UIController.elements.uploadArea.classList.contains('disabled')) {
+            UIController.elements.uploadArea.style.borderColor = 'var(--neon-magenta)';
+          }
+        });
+
+        UIController.elements.uploadArea.addEventListener('dragleave', () => {
+          UIController.elements.uploadArea.style.borderColor = '';
+        });
+
+        UIController.elements.uploadArea.addEventListener('drop', (e) => {
+          e.preventDefault();
+          UIController.elements.uploadArea.style.borderColor = '';
+          if (!UIController.elements.uploadArea.classList.contains('disabled')) {
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+              this.handleFileSelect(file);
+            }
+          }
         });
       },
 
@@ -800,118 +1036,104 @@
       },
 
       selectCategory(option) {
+        // Update selected state
         document.querySelectorAll('.category-option').forEach(o => o.classList.remove('selected'));
         option.classList.add('selected');
+
+        const categoryName = option.querySelector('span').textContent;
         UIController.selectedCategory = option.dataset.category;
 
-        // Show upload button and update upload area text
-        const uploadBtn = document.getElementById('uploadBtn');
-        const uploadArea = document.getElementById('uploadArea');
+        // Enable upload area
+        UIController.enableUploadArea(categoryName);
 
-        if (uploadBtn) {
-          uploadBtn.style.display = 'block';
-          uploadBtn.textContent = `Subir imagen a ${option.querySelector('span').textContent}`;
-        }
-
-        if (uploadArea) {
-          uploadArea.querySelector('p').textContent = `Categoria: ${option.querySelector('span').textContent}`;
-        }
+        // Update upload button state
+        UIController.updateUploadButton();
       },
 
-      async handleUpload() {
-        if (!UIController.selectedCategory) {
-          alert('Primero selecciona una categoria');
+      handleFileSelect(file) {
+        // Validate file type
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+          alert('Formato no valido. Usa JPG, PNG o WEBP.');
           return;
         }
 
+        // Validate file size (10MB max)
+        if (file.size > 10 * 1024 * 1024) {
+          alert('La imagen es muy grande. Maximo 10MB.');
+          return;
+        }
+
+        // Store file and show preview
+        UIController.selectedFile = file;
+        UIController.showPreview(file);
+        UIController.updateUploadButton();
+      },
+
+      async handleUpload() {
+        if (!UIController.selectedCategory || !UIController.selectedFile) {
+          alert('Selecciona una categoria y una imagen');
+          return;
+        }
+
+        UIController.showProgress();
+
         try {
-          const uploadBtn = document.getElementById('uploadBtn');
-          if (uploadBtn) {
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = 'Preparando...';
-          }
-
+          // Get upload signature from server
           const config = await ApiService.getUploadSignature(UIController.selectedCategory);
-          UIController.cloudConfig = config;
 
-          const widget = cloudinary.createUploadWidget({
-            cloudName: config.cloud_name,
-            apiKey: config.api_key,
-            uploadSignature: config.signature,
-            uploadSignatureTimestamp: config.timestamp,
-            folder: config.folder,
-            sources: ['local', 'camera'],
-            multiple: true,
-            maxFileSize: 10000000,
-            clientAllowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
-            showAdvancedOptions: false,
-            cropping: false,
-            styles: {
-              palette: {
-                window: "#0a0a0a",
-                windowBorder: "#333333",
-                tabIcon: "#ff00ff",
-                menuIcons: "#ffffff",
-                textDark: "#000000",
-                textLight: "#ffffff",
-                link: "#ff00ff",
-                action: "#00ffff",
-                inactiveTabIcon: "#555555",
-                error: "#ff4444",
-                inProgress: "#00ffff",
-                complete: "#33ff33",
-                sourceBg: "#1a1a1a"
-              },
-              fonts: {
-                default: null,
-                "'Quicksand', sans-serif": {
-                  url: "https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700",
-                  active: true
-                }
-              }
-            }
-          }, (error, result) => {
-            if (error) {
-              console.error('Upload error:', error);
-              return;
-            }
+          // Upload to Cloudinary using XHR for progress tracking
+          const formData = new FormData();
+          formData.append('file', UIController.selectedFile);
+          formData.append('api_key', config.api_key);
+          formData.append('timestamp', config.timestamp);
+          formData.append('signature', config.signature);
+          formData.append('folder', config.folder);
 
-            if (result.event === "success") {
-              console.log('Upload successful:', result.info.public_id);
-              UIController.showSuccess();
-              // Use App instead of this
-              App.loadStats();
-              App.loadImages();
-            }
+          const xhr = new XMLHttpRequest();
 
-            if (result.event === "close") {
-              // Re-enable button when widget closes
-              const uploadBtn = document.getElementById('uploadBtn');
-              if (uploadBtn && UIController.selectedCategory) {
-                uploadBtn.disabled = false;
-                const categoryName = document.querySelector('.category-option.selected span');
-                uploadBtn.textContent = `Subir imagen a ${categoryName ? categoryName.textContent : 'categoria'}`;
-              }
+          // Progress handler
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const percent = (e.loaded / e.total) * 100;
+              UIController.updateProgress(percent);
             }
           });
 
-          widget.open();
+          // Complete handler
+          xhr.addEventListener('load', () => {
+            if (xhr.status === 200) {
+              const response = JSON.parse(xhr.responseText);
+              console.log('Upload successful:', response.public_id);
 
-          // Re-enable button after widget opens
-          if (uploadBtn) {
-            uploadBtn.disabled = false;
-            const categoryName = document.querySelector('.category-option.selected span');
-            uploadBtn.textContent = `Subir imagen a ${categoryName ? categoryName.textContent : 'categoria'}`;
-          }
+              UIController.showSuccess();
+              UIController.resetUploadForm();
+
+              // Reload gallery and stats
+              this.loadStats();
+              this.loadImages();
+            } else {
+              console.error('Upload failed:', xhr.responseText);
+              alert('Error subiendo imagen');
+              UIController.hideProgress();
+            }
+          });
+
+          // Error handler
+          xhr.addEventListener('error', () => {
+            console.error('Upload error');
+            alert('Error de conexion al subir');
+            UIController.hideProgress();
+          });
+
+          // Send request
+          xhr.open('POST', `https://api.cloudinary.com/v1_1/${config.cloud_name}/image/upload`);
+          xhr.send(formData);
+
         } catch (error) {
-          console.error('Error getting upload signature:', error);
+          console.error('Error preparing upload:', error);
           alert('Error preparando subida');
-
-          const uploadBtn = document.getElementById('uploadBtn');
-          if (uploadBtn) {
-            uploadBtn.disabled = false;
-            uploadBtn.textContent = 'Subir imagen';
-          }
+          UIController.hideProgress();
         }
       },
 
