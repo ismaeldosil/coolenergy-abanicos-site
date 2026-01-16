@@ -263,10 +263,46 @@ app.get('/api/images', requireCloudinary, async (req, res) => {
       created_at: img.created_at
     }));
 
-    res.json({ success: true, images });
+    res.json({ success: true, images, source: 'cloudinary' });
   } catch (error) {
     console.error('Error listing images:', error);
     res.status(500).json({ success: false, error: 'Error listando imagenes' });
+  }
+});
+
+// API: Fallback images (when Cloudinary is unavailable)
+app.get('/api/images/fallback', (req, res) => {
+  try {
+    const fallbackData = require('./fallback-images.json');
+    const { category } = req.query;
+
+    if (!fallbackData.enabled) {
+      return res.json({ success: true, images: [], source: 'fallback-disabled' });
+    }
+
+    const baseUrl = `https://raw.githubusercontent.com/${fallbackData.githubRepo}/${fallbackData.branch}/${fallbackData.basePath}`;
+
+    let images = fallbackData.images.map(img => ({
+      public_id: img.id,
+      url: `${baseUrl}/${img.filename}`,
+      thumbnail: `${baseUrl}/${img.filename}`,
+      full: `${baseUrl}/${img.filename}`,
+      category: img.category,
+      source: 'github-fallback'
+    }));
+
+    // Filter by category if specified
+    if (category && category !== 'all') {
+      if (!config.categories.list.includes(category)) {
+        return res.status(400).json({ success: false, error: 'Categoria invalida' });
+      }
+      images = images.filter(img => img.category === category);
+    }
+
+    res.json({ success: true, images, source: 'fallback' });
+  } catch (error) {
+    console.error('Error loading fallback images:', error);
+    res.status(500).json({ success: false, error: 'Error cargando imagenes de respaldo' });
   }
 });
 

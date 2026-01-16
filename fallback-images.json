@@ -1,0 +1,69 @@
+{
+  "enabled": true,
+  "description": "Imagenes de respaldo cuando Cloudinary no esta disponible",
+  "githubRepo": "ismaeldosil/coolenergy-abanicos-site",
+  "branch": "main",
+  "basePath": "images",
+  "images": [
+    {
+      "id": "fallback-001",
+      "filename": "03c036c4ccd4a5f82ca1057ba63f5175.jpg",
+      "category": "rave-xl"
+    },
+    {
+      "id": "fallback-002",
+      "filename": "0b3e276ef095771be36442d2b98a1ba4.jpg",
+      "category": "rave-xl"
+    },
+    {
+      "id": "fallback-003",
+      "filename": "112492c4c1916ce13c770714bd80715f.jpg",
+      "category": "rave-xl"
+    },
+    {
+      "id": "fallback-004",
+      "filename": "121911f40b5db4a33c6ccfc895ff8f83.jpg",
+      "category": "rave-l"
+    },
+    {
+      "id": "fallback-005",
+      "filename": "12f83572eebdc266b2bb1043590cbc49.jpg",
+      "category": "rave-l"
+    },
+    {
+      "id": "fallback-006",
+      "filename": "14b9db1406da6fd8d6584379ba9bb5c9.jpg",
+      "category": "rave-l"
+    },
+    {
+      "id": "fallback-007",
+      "filename": "21adc46c9f7621a598a4cfc687da749a.jpg",
+      "category": "medium"
+    },
+    {
+      "id": "fallback-008",
+      "filename": "22fee7fb0e4ce171fedc53098a84dea0.jpg",
+      "category": "medium"
+    },
+    {
+      "id": "fallback-009",
+      "filename": "249f7e8c9d0a202a8233d4f3a653df3c.jpg",
+      "category": "medium"
+    },
+    {
+      "id": "fallback-010",
+      "filename": "260a2c952ced1cc373655924f9f30c9d.jpg",
+      "category": "personalizados"
+    },
+    {
+      "id": "fallback-011",
+      "filename": "2e90519f90f57137a13d9c2854177f60.jpg",
+      "category": "personalizados"
+    },
+    {
+      "id": "fallback-012",
+      "filename": "56d7ca52528a9cc5fe20a0d92fe4d65f.jpg",
+      "category": "personalizados"
+    }
+  ]
+}

@@ -243,49 +243,66 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // =====================================
-  // Load Cloudinary Images (Dynamic Gallery)
+  // Load Cloudinary Images (Dynamic Gallery) with Fallback
   // =====================================
   async function loadCloudinaryImages() {
     const galleryGrid = document.getElementById('galleryGrid');
     const loadingEl = document.getElementById('galleryLoading');
 
+    let images = [];
+    let source = 'none';
+
+    // Try Cloudinary first
     try {
       const response = await fetch('/api/images?category=all');
       const data = await response.json();
 
-      // Clear loading state
-      if (loadingEl) loadingEl.remove();
-
       if (data.success && data.images.length > 0) {
-        // Clear any existing content
-        galleryGrid.innerHTML = '';
-
-        // Add all images from Cloudinary with staggered animation
-        data.images.forEach((img, index) => {
-          const card = createProductCard(img, index);
-          galleryGrid.appendChild(card);
-        });
-
-        // Re-attach filter listeners for new cards
-        attachFilterListeners();
-      } else {
-        // Show empty state
-        galleryGrid.innerHTML = `
-          <div class="gallery-empty">
-            <p>Aun no hay abanicos en la galeria.</p>
-            <p>Pronto agregaremos mas diseños!</p>
-            <a href="https://wa.me/59895192300?text=Hola!%20Quiero%20ver%20abanicos" class="btn btn-secondary" target="_blank">
-              Consultanos por WhatsApp
-            </a>
-          </div>
-        `;
+        images = data.images;
+        source = data.source || 'cloudinary';
+        console.log(`Galeria cargada desde: ${source} (${images.length} imagenes)`);
       }
     } catch (error) {
-      console.error('Error cargando galeria:', error);
-      if (loadingEl) loadingEl.remove();
+      console.warn('Cloudinary no disponible, intentando fallback...', error);
+    }
+
+    // If Cloudinary failed or returned no images, try fallback
+    if (images.length === 0) {
+      try {
+        const fallbackResponse = await fetch('/api/images/fallback?category=all');
+        const fallbackData = await fallbackResponse.json();
+
+        if (fallbackData.success && fallbackData.images.length > 0) {
+          images = fallbackData.images;
+          source = fallbackData.source || 'fallback';
+          console.log(`Galeria cargada desde fallback: ${source} (${images.length} imagenes)`);
+        }
+      } catch (fallbackError) {
+        console.error('Error cargando fallback:', fallbackError);
+      }
+    }
+
+    // Clear loading state
+    if (loadingEl) loadingEl.remove();
+
+    if (images.length > 0) {
+      // Clear any existing content
+      galleryGrid.innerHTML = '';
+
+      // Add all images with staggered animation
+      images.forEach((img, index) => {
+        const card = createProductCard(img, index);
+        galleryGrid.appendChild(card);
+      });
+
+      // Re-attach filter listeners for new cards
+      attachFilterListeners();
+    } else {
+      // Show empty state
       galleryGrid.innerHTML = `
         <div class="gallery-empty">
-          <p>Error cargando la galeria.</p>
+          <p>Aun no hay abanicos en la galeria.</p>
+          <p>Pronto agregaremos mas diseños!</p>
           <a href="https://wa.me/59895192300?text=Hola!%20Quiero%20ver%20abanicos" class="btn btn-secondary" target="_blank">
             Consultanos por WhatsApp
           </a>
