@@ -496,9 +496,7 @@ img {
 }
 
 .category-card {
-  background:
-    linear-gradient(to bottom, rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.95)),
-    url('../images/hero-bg.png') center center / cover no-repeat;
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.95));
   border-radius: var(--radius-md);
   padding: var(--spacing-md);
   text-align: center;
@@ -507,6 +505,19 @@ img {
   position: relative;
   overflow: hidden;
   cursor: pointer;
+}
+
+/* Background image layer for iOS compatibility */
+.category-card-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('../images/hero-bg.png') center center / cover no-repeat;
+  opacity: 0.15;
+  z-index: 0;
+  pointer-events: none;
 }
 
 /* Neon glow line on top */
@@ -520,6 +531,7 @@ img {
   background: var(--gradient-neon);
   opacity: 0;
   transition: var(--transition-base);
+  z-index: 2;
 }
 
 /* Subtle neon corner accents */
@@ -540,9 +552,11 @@ img {
 .category-card:hover {
   transform: translateY(-5px);
   border-color: rgba(255, 255, 255, 0.15);
-  background:
-    linear-gradient(to bottom, rgba(10, 10, 10, 0.75), rgba(10, 10, 10, 0.9)),
-    url('../images/hero-bg.png') center center / cover no-repeat;
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0.75), rgba(10, 10, 10, 0.9));
+}
+
+.category-card:hover .category-card-bg {
+  opacity: 0.2;
 }
 
 .category-card:hover .category-glow {
@@ -554,6 +568,8 @@ img {
 }
 
 .category-icon {
+  position: relative;
+  z-index: 1;
   width: 60px;
   height: 60px;
   margin: 0 auto var(--spacing-sm);
@@ -578,17 +594,23 @@ img {
 }
 
 .category-card h3 {
+  position: relative;
+  z-index: 1;
   font-family: var(--font-display);
   font-size: 1.25rem;
   margin-bottom: 0.5rem;
 }
 
 .category-card p {
+  position: relative;
+  z-index: 1;
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
 .category-tag {
+  position: relative;
+  z-index: 1;
   display: inline-block;
   margin-top: var(--spacing-sm);
   padding: 0.25rem 0.75rem;
@@ -1156,9 +1178,7 @@ img {
 
 .modal-content {
   position: relative;
-  background:
-    linear-gradient(to bottom, rgba(10, 10, 10, 0.92), rgba(10, 10, 10, 0.98)),
-    url('../images/hero-bg.png') center center / cover no-repeat;
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0.92), rgba(10, 10, 10, 0.98));
   border-radius: var(--radius-lg);
   max-width: 900px;
   width: 100%;
@@ -1167,6 +1187,20 @@ img {
   border: 1px solid rgba(255, 255, 255, 0.1);
   transform: scale(0.9) translateY(20px);
   transition: transform 0.3s ease;
+}
+
+/* Background image layer for iOS compatibility */
+.modal-content-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('../images/hero-bg.png') center center / cover no-repeat;
+  opacity: 0.1;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: var(--radius-lg);
 }
 
 .modal.active .modal-content {
@@ -1201,6 +1235,8 @@ img {
 }
 
 .modal-header {
+  position: relative;
+  z-index: 1;
   padding: var(--spacing-md);
   background: var(--bg-elevated);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -1222,6 +1258,8 @@ img {
 }
 
 .modal-body {
+  position: relative;
+  z-index: 1;
   padding: var(--spacing-md);
   overflow-y: auto;
   max-height: calc(85vh - 100px);
