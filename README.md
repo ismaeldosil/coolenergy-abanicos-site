@@ -103,24 +103,14 @@ Todas las configuraciones estan centralizadas en `config.js`. Para modificar val
 | `JWT_SECRET` | Secreto para tokens JWT | (default inseguro) |
 | `ADMIN_PASSWORD_HASH` | Hash bcrypt del password admin | (default) |
 
-## API Endpoints
+## Documentacion
 
-### Publicos
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| GET | `/api/config` | Configuracion publica del sitio |
-| GET | `/api/images` | Lista imagenes de la galeria |
-| POST | `/api/analytics/pageview` | Registrar pageview |
-| POST | `/api/analytics/event` | Registrar evento |
-
-### Protegidos (requieren JWT)
-| Metodo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Autenticacion admin |
-| GET | `/api/stats` | Estadisticas de imagenes |
-| GET | `/api/analytics` | Datos de analytics |
-| POST | `/api/upload/signature` | Firma para upload a Cloudinary |
-| DELETE | `/api/images/:id` | Eliminar imagen |
+| Documento | Descripcion |
+|-----------|-------------|
+| [API Reference](docs/API-Reference.md) | Documentacion completa de endpoints |
+| [Setup Tutorial](docs/SETUP_TUTORIAL.md) | Guia de configuracion de servicios |
+| [Admin Tutorial](docs/ADMIN_TUTORIAL.md) | Tutorial del panel de administracion |
+| [Usage Guide](USAGE.md) | Guia de uso general |
 
 ## Deploy en Railway
 
