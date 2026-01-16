@@ -2,6 +2,38 @@
 
 Sitio web institucional y sistema de gestion para Cool Energy Abanicos - Abanicos premium para festivales y raves, hechos en Uruguay.
 
+## Features
+
+### Sitio Web
+- **Galeria Dinamica** - Imagenes cargadas desde Cloudinary CDN con optimizacion automatica
+- **Sistema de Fallback** - Si Cloudinary falla, las imagenes se cargan desde GitHub automaticamente
+- **Modal de Categorias** - Vista expandida de productos por categoria con animaciones
+- **Animaciones CSS** - Efectos de entrada/salida en galeria, hover effects, transiciones fluidas
+- **Diseño Responsive** - Optimizado para mobile, tablet y desktop
+- **Tema Neon/Rave** - Estetica cyberpunk con gradientes neon y efectos glow
+- **SEO Optimizado** - Meta tags, Open Graph, structured data
+- **Performance** - Lazy loading, compresion, cache headers optimizados
+
+### Panel de Administracion
+- **Autenticacion JWT** - Login seguro con tokens de 24h de expiracion
+- **Upload de Imagenes** - Subida directa a Cloudinary con preview y barra de progreso
+- **Gestion de Galeria** - Ver, filtrar y eliminar imagenes por categoria
+- **Analytics Dashboard** - Visualizacion de pageviews y eventos en tiempo real
+- **Estadisticas** - Conteo de imagenes por categoria
+
+### Backend & Seguridad
+- **API REST** - Endpoints para imagenes, analytics, autenticacion y configuracion
+- **Rate Limiting** - Proteccion contra abuso (100 req/15min API, 5 req/15min auth)
+- **Helmet.js** - Headers HTTP seguros
+- **bcrypt** - Passwords hasheados con salt
+- **express-validator** - Validacion y sanitizacion de inputs
+- **Configuracion Centralizada** - Todas las settings en un solo archivo
+
+### DevOps
+- **Deploy Automatico** - Push a main = deploy en Railway
+- **Health Check** - Endpoint `/health` para monitoreo
+- **Variables de Entorno** - Configuracion sin tocar codigo
+
 ## Arquitectura
 
 ```mermaid
