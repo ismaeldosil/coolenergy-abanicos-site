@@ -5,6 +5,7 @@ images/*.jpg
 !images/favicon.png
 !images/hero-bg.png
 !images/texture-bg.png
+!images/5b91cf4c597a5e5cdce439d470836771.jpg
 
 # Node modules will be installed fresh
 node_modules/
