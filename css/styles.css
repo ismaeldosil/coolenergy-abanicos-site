@@ -807,6 +807,36 @@ img {
 .about {
   padding: var(--spacing-xl) 0;
   background: var(--bg-secondary);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background image layer for iOS compatibility */
+.about-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('../images/hero-bg.png') center center / cover no-repeat;
+  opacity: 0.12;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Neon gradient overlay for about section */
+.about::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(circle at 30% 70%, rgba(157, 78, 221, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 70% 30%, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .about-grid {
@@ -814,6 +844,8 @@ img {
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-lg);
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .about-content h2 {
@@ -1025,39 +1057,8 @@ img {
 /* === FOOTER === */
 .footer {
   padding: var(--spacing-lg) 0 var(--spacing-md);
-  background: url('../images/hero-bg.png') center center / cover no-repeat;
+  background: var(--bg-secondary);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  position: relative;
-  overflow: hidden;
-}
-
-.footer::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(10, 10, 10, 0.85);
-  pointer-events: none;
-}
-
-.footer::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background:
-    radial-gradient(circle at 30% 70%, rgba(157, 78, 221, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 70% 30%, rgba(0, 212, 255, 0.1) 0%, transparent 50%);
-  pointer-events: none;
-}
-
-.footer .container {
-  position: relative;
-  z-index: 2;
 }
 
 .footer-grid {
