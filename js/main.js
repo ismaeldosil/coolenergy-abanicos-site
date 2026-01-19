@@ -5,6 +5,30 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   // =====================================
+  // Theme Toggle (Dark/Light Mode)
+  // =====================================
+  const themeToggle = document.getElementById('themeToggle');
+
+  // Load saved theme or default to dark
+  const savedTheme = localStorage.getItem('ce-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('ce-theme', newTheme);
+
+      // Track theme change
+      if (window.CoolEnergyAnalytics) {
+        window.CoolEnergyAnalytics.trackEvent('theme_change', { theme: newTheme });
+      }
+    });
+  }
+
+  // =====================================
   // Mobile Menu Toggle
   // =====================================
   const menuToggle = document.getElementById('menuToggle');
